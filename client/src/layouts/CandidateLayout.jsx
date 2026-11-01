@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BriefcaseBusiness, FileText, LayoutDashboard, LogOut, Menu, UserRound, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -15,6 +15,7 @@ export default function CandidateLayout() {
   const [open, setOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const signOut = async () => {
     await logout();
@@ -36,7 +37,19 @@ export default function CandidateLayout() {
       </div>
       <nav className="flex-1 space-y-1 px-3 py-5">
         {links.map(({ label, path, icon: Icon, end }) => (
-          <NavLink key={path} to={path} end={end} onClick={() => setOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-colors ${isActive ? 'bg-[#202020] text-[#FFFFFF] border border-[#303030]' : 'text-[#8E8E8E] hover:bg-[#171717] hover:text-[#F5F5F5]'}`}>
+          <NavLink
+            key={path}
+            to={path}
+            end={end}
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium border transition-all duration-200 ${
+                isActive
+                  ? 'bg-[#202020] text-[#FFFFFF] border-[#303030] shadow-sm'
+                  : 'border-transparent text-[#8E8E8E] hover:bg-[#171717] hover:text-[#F5F5F5] hover:border-[#222222]'
+              }`
+            }
+          >
             <Icon className="h-4 w-4" />
             {label}
           </NavLink>
@@ -62,7 +75,11 @@ export default function CandidateLayout() {
         <div className="border-b border-[#202020] bg-[#101010] px-6 py-2.5 text-xs text-[#8E8E8E]">
           <span className="mr-2 inline-block h-2 w-2 rounded-full bg-[#10B981]" /> Your private candidate workspace
         </div>
-        <main className="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8"><Outlet /></main>
+        <main className="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-80px)]">
+          <div key={location.pathname} className="animate-tab-fade">
+            <Outlet />
+          </div>
+        </main>
       </div>
     </div>
   );

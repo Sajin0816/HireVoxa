@@ -118,8 +118,10 @@ export default function DashboardLayout() {
         </div>
 
         {/* Scrollable Page Body */}
-        <main className="p-4 sm:p-6 lg:p-7 max-w-7xl mx-auto w-full">
-          <Outlet context={{ counts, setCounts }} />
+        <main className="p-4 sm:p-6 lg:p-7 max-w-7xl mx-auto w-full min-h-[calc(100vh-80px)]">
+          <div key={location.pathname} className="animate-tab-fade">
+            <Outlet context={{ counts, setCounts }} />
+          </div>
         </main>
       </div>
     </div>

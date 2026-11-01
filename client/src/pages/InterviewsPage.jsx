@@ -150,10 +150,10 @@ export default function InterviewsPage() {
               role="tab"
               aria-selected={isActive}
               onClick={() => setStatusFilter(st.toLowerCase())}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-200 whitespace-nowrap ${
                 isActive
-                  ? 'bg-[#202020] text-[#F5F5F5] border-[#303030]'
-                  : 'border-transparent text-[#777777] hover:text-[#A3A3A3] hover:bg-[#171717]'
+                  ? 'bg-[#202020] text-[#F5F5F5] border-[#303030] shadow-sm'
+                  : 'border-transparent text-[#777777] hover:text-[#A3A3A3] hover:bg-[#171717] hover:border-[#262626]'
               }`}
             >
               {st}

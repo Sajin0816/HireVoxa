@@ -207,20 +207,25 @@ export default function ApplicationsPage() {
       {/* Filter and Search Bar */}
       <div className="bg-[#1B1B1B] border border-[#303030] rounded-2xl p-4 space-y-4">
         {/* Status Filters */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {STATUS_FILTERS.map((status) => (
-            <button
-              key={status}
-              onClick={() => setSelectedStatus(status)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
-                selectedStatus === status
-                  ? 'bg-[#2E2E2E] text-white border border-[#505050]'
-                  : 'text-[#888888] hover:text-[#D4D4D4] hover:bg-[#222222]'
-              }`}
-            >
-              {status}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Application status filters">
+          {STATUS_FILTERS.map((status) => {
+            const isActive = selectedStatus === status;
+            return (
+              <button
+                key={status}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setSelectedStatus(status)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 whitespace-nowrap ${
+                  isActive
+                    ? 'bg-[#2E2E2E] text-white border-[#505050] shadow-sm'
+                    : 'border-transparent text-[#888888] hover:text-[#D4D4D4] hover:bg-[#222222] hover:border-[#333333]'
+                }`}
+              >
+                {status}
+              </button>
+            );
+          })}
         </div>
 
         {/* Job dropdown and search */}
@@ -259,20 +264,22 @@ export default function ApplicationsPage() {
       )}
 
       {/* Main Content Area */}
-      {loading ? (
-        <div className="py-24 text-center text-sm text-[#777777]">Loading applicant records...</div>
-      ) : applications.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#353535] p-16 text-center">
-          <FileText className="w-10 h-10 text-[#555555] mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-[#E5E5E5]">No applications found</h3>
-          <p className="text-xs text-[#888888] mt-1 max-w-md mx-auto">
-            {selectedStatus !== 'All' || selectedJobId
-              ? 'No applications match your selected filters. Try clearing filters or selecting another job.'
-              : 'As candidates discover your published requisitions and apply, their profiles will appear here.'}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3">
+      <div className="min-h-[420px]" role="tabpanel" aria-label={`${selectedStatus} applications`}>
+        <div key={`${selectedStatus}-${selectedJobId}`} className="animate-tab-fade">
+          {loading ? (
+            <div className="py-24 text-center text-sm text-[#777777]">Loading applicant records...</div>
+          ) : applications.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[#353535] p-16 text-center">
+              <FileText className="w-10 h-10 text-[#555555] mx-auto mb-3" />
+              <h3 className="text-base font-semibold text-[#E5E5E5]">No applications found</h3>
+              <p className="text-xs text-[#888888] mt-1 max-w-md mx-auto">
+                {selectedStatus !== 'All' || selectedJobId
+                  ? 'No applications match your selected filters. Try clearing filters or selecting another job.'
+                  : 'As candidates discover your published requisitions and apply, their profiles will appear here.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
           {applications.map((app) => (
             <div
               key={app._id}
@@ -370,6 +377,8 @@ export default function ApplicationsPage() {
           ))}
         </div>
       )}
+        </div>
+      </div>
 
       {/* Detail Modal / Drawer */}
       {activeApp && (

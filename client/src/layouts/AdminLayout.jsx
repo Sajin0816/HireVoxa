@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
@@ -22,6 +22,7 @@ import {
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -111,10 +112,10 @@ export default function AdminLayout() {
                   end={item.end}
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                    `flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
                       isActive
-                        ? 'bg-[#1B1B1B] text-emerald-400 border border-emerald-500/20 shadow-sm'
-                        : 'text-zinc-400 hover:text-white hover:bg-[#161616]'
+                        ? 'bg-[#1B1B1B] text-emerald-400 border-emerald-500/20 shadow-sm'
+                        : 'border-transparent text-zinc-400 hover:text-white hover:bg-[#161616] hover:border-zinc-800'
                     }`
                   }
                 >
@@ -164,7 +165,9 @@ export default function AdminLayout() {
 
         {/* Page Content */}
         <div className="p-6 md:p-8 flex-1 max-w-7xl w-full mx-auto">
-          <Outlet />
+          <div key={location.pathname} className="animate-tab-fade">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

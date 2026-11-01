@@ -145,7 +145,7 @@ export default function RegisterPage() {
             role="tab"
             aria-selected={role === 'company'}
             onClick={() => handleRoleChange('company')}
-            className={`py-2 text-xs font-semibold rounded-lg transition-all border ${
+            className={`py-2 text-xs font-semibold rounded-lg transition-all duration-200 border ${
               role === 'company'
                 ? 'bg-[#171717] text-[#F5F5F5] shadow-sm border-[#303030]'
                 : 'border-transparent text-[#777777] hover:text-[#A3A3A3]'
@@ -158,7 +158,7 @@ export default function RegisterPage() {
             role="tab"
             aria-selected={role === 'candidate'}
             onClick={() => handleRoleChange('candidate')}
-            className={`py-2 text-xs font-semibold rounded-lg transition-all border ${
+            className={`py-2 text-xs font-semibold rounded-lg transition-all duration-200 border ${
               role === 'candidate'
                 ? 'bg-[#171717] text-[#F5F5F5] shadow-sm border-[#303030]'
                 : 'border-transparent text-[#777777] hover:text-[#A3A3A3]'

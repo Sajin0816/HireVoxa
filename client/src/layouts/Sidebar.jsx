@@ -120,10 +120,10 @@ export default function Sidebar({ collapsed, setCollapsed, counts = {} }) {
               to={item.path}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150 ${
+                `flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-semibold border transition-all duration-200 ${
                   isActive
-                    ? 'bg-[#202020] text-[#FFFFFF] border border-[#303030]'
-                    : 'text-[#8E8E8E] hover:text-[#EDEDED] hover:bg-[#171717]'
+                    ? 'bg-[#202020] text-[#FFFFFF] border-[#303030] shadow-sm'
+                    : 'border-transparent text-[#8E8E8E] hover:text-[#EDEDED] hover:bg-[#171717] hover:border-[#222222]'
                 }`
               }
               title={collapsed ? item.name : undefined}
@@ -156,10 +156,10 @@ export default function Sidebar({ collapsed, setCollapsed, counts = {} }) {
               key={item.name}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 ${
                   isActive
-                    ? 'bg-[#202020] text-white border border-[#303030]'
-                    : 'text-[#8E8E8E] hover:text-[#EDEDED] hover:bg-[#171717]'
+                    ? 'bg-[#202020] text-white border-[#303030] shadow-sm'
+                    : 'border-transparent text-[#8E8E8E] hover:text-[#EDEDED] hover:bg-[#171717] hover:border-[#222222]'
                 }`
               }
               title={collapsed ? item.name : undefined}
