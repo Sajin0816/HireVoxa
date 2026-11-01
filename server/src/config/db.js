@@ -11,6 +11,19 @@ dotenv.config();
 let activeDbMode = 'unavailable';
 let connectionPromise = null;
 
+// Disable Mongoose query buffering so disconnected operations fail fast instead of hanging serverless requests
+mongoose.set('bufferCommands', false);
+
+/**
+ * Resolves the MongoDB connection URI from environment variables without exposing credentials or hardcoded fallbacks.
+ */
+export function getMongoUri() {
+  if (typeof process.env.MONGODB_URI === 'string' && process.env.MONGODB_URI.trim() !== '') {
+    return process.env.MONGODB_URI.trim();
+  }
+  return '';
+}
+
 /**
  * Sanitizes connection strings and error messages to prevent leaking credentials in logs.
  * Replaces credentials like 'mongodb+srv://user:pass@host' with 'mongodb+srv://user:***@host'.
@@ -60,12 +73,12 @@ export async function connectDB(overrideUri = null) {
     return;
   }
 
-  const uri = overrideUri || process.env.MONGODB_URI;
+  const uri = overrideUri !== null ? overrideUri : getMongoUri();
 
   if (!uri || uri.trim() === '') {
     if (!isDemoModeAllowed()) {
       activeDbMode = 'unavailable';
-      throw new Error('[Hirevoxa DB Config Error] Missing MONGODB_URI. Normal startup requires a configured MongoDB connection string. Demo mode is disabled.');
+      throw new Error('[Hirevoxa DB Config Error] Missing MONGODB_URI. Production environments require an explicitly configured MONGODB_URI environment variable.');
     }
     activeDbMode = 'in-memory-demo';
     console.log('[Hirevoxa DB] Operating in explicit In-Memory Demonstration Mode (development/test only).');
@@ -81,6 +94,9 @@ export async function connectDB(overrideUri = null) {
         attempts++;
         const conn = await mongoose.connect(uri, {
           serverSelectionTimeoutMS: 5000,
+          connectTimeoutMS: 5000,
+          socketTimeoutMS: 20000,
+          maxPoolSize: 10,
           dbName: 'hirevoxa'
         });
         activeDbMode = 'mongodb';

@@ -10,7 +10,7 @@
     "seed": "node src/seed/seed.js",
     "db:check": "node src/scripts/verifyConnection.js",
     "bootstrap:admin": "node src/scripts/bootstrapAdmin.js",
-    "test": "node --import ./tests/setup.js --test tests/api.test.js tests/auth.test.js tests/security.test.js tests/phase2a_acceptance.test.js tests/phase2a_e2e_qa.test.js tests/tenant_isolation.test.js tests/session_security.test.js tests/persistence.test.js tests/phase3_candidate_portal.test.js tests/phase3_e2e_scenario.test.js tests/phase4_hiring_workflow.test.js tests/phase4_5_admin_operations.test.js tests/phase5_monetization.test.js"
+    "test": "node --import ./tests/setup.js --test tests/api.test.js tests/auth.test.js tests/security.test.js tests/phase2a_acceptance.test.js tests/phase2a_e2e_qa.test.js tests/tenant_isolation.test.js tests/session_security.test.js tests/persistence.test.js tests/phase3_candidate_portal.test.js tests/phase3_e2e_scenario.test.js tests/phase4_hiring_workflow.test.js tests/phase4_5_admin_operations.test.js tests/phase5_monetization.test.js tests/phase_d_e2e_verification.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
