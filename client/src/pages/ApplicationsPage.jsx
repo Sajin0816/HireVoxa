@@ -28,7 +28,8 @@ export default function ApplicationsPage() {
   const [searchParams] = useSearchParams();
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || 'All');
   const [selectedJobId, setSelectedJobId] = useState(searchParams.get('jobId') || '');
@@ -51,8 +52,8 @@ export default function ApplicationsPage() {
   // Internal note state
   const [internalNoteText, setInternalNoteText] = useState('');
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
     setError('');
     try {
       const [appsRes, jobsRes] = await Promise.all([
@@ -73,11 +74,46 @@ export default function ApplicationsPage() {
       setError(err.message || 'Failed to load applications.');
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    let isCurrent = true;
+    setLoading(true);
+    setError('');
+
+    Promise.all([
+      api.getApplications({
+        status: selectedStatus === 'All' ? undefined : selectedStatus,
+        jobId: selectedJobId || undefined,
+        search: searchQuery || undefined
+      }),
+      api.getJobs()
+    ])
+      .then(([appsRes, jobsRes]) => {
+        if (!isCurrent) return;
+        setApplications(appsRes.data || []);
+        setJobs(jobsRes.data || []);
+        if (activeApp) {
+          const refreshed = (appsRes.data || []).find((a) => a._id === activeApp._id);
+          if (refreshed) setActiveApp(refreshed);
+        }
+      })
+      .catch((err) => {
+        if (!isCurrent) return;
+        setError(err.message || 'Failed to load applications.');
+      })
+      .finally(() => {
+        if (isCurrent) {
+          setLoading(false);
+          setInitialLoading(false);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [selectedStatus, selectedJobId]);
 
   const handleSearchSubmit = (e) => {
@@ -265,21 +301,22 @@ export default function ApplicationsPage() {
 
       {/* Main Content Area */}
       <div className="min-h-[420px]" role="tabpanel" aria-label={`${selectedStatus} applications`}>
-        <div key={`${selectedStatus}-${selectedJobId}`} className="animate-tab-fade">
-          {loading ? (
-            <div className="py-24 text-center text-sm text-[#777777]">Loading applicant records...</div>
-          ) : applications.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#353535] p-16 text-center">
-              <FileText className="w-10 h-10 text-[#555555] mx-auto mb-3" />
-              <h3 className="text-base font-semibold text-[#E5E5E5]">No applications found</h3>
-              <p className="text-xs text-[#888888] mt-1 max-w-md mx-auto">
-                {selectedStatus !== 'All' || selectedJobId
-                  ? 'No applications match your selected filters. Try clearing filters or selecting another job.'
-                  : 'As candidates discover your published requisitions and apply, their profiles will appear here.'}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-3">
+        {initialLoading ? (
+          <div className="py-24 text-center text-sm text-[#777777]">Loading applicant records...</div>
+        ) : (
+          <div className={`transition-opacity duration-200 ${loading ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+            {applications.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-[#353535] p-16 text-center">
+                <FileText className="w-10 h-10 text-[#555555] mx-auto mb-3" />
+                <h3 className="text-base font-semibold text-[#E5E5E5]">No applications found</h3>
+                <p className="text-xs text-[#888888] mt-1 max-w-md mx-auto">
+                  {selectedStatus !== 'All' || selectedJobId
+                    ? 'No applications match your selected filters. Try clearing filters or selecting another job.'
+                    : 'As candidates discover your published requisitions and apply, their profiles will appear here.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
           {applications.map((app) => (
             <div
               key={app._id}
@@ -375,9 +412,10 @@ export default function ApplicationsPage() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Detail Modal / Drawer */}
