@@ -1,7 +1,17 @@
 // Hirevoxa Reusable API Client
 // Connects to Express backend with environment variable configuration, credentials, and anti-CSRF headers
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname === 'hirevoxa.vercel.app' || window.location.hostname.endsWith('.vercel.app'))) {
+    return 'https://hirevoxa-server.vercel.app/api';
+  }
+  return 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 function getToken() {
   return localStorage.getItem('hirevoxa_token');

@@ -40,10 +40,24 @@ app.use(helmet({
 
 // 2. CORS configuration (explicit trusted origins with credentials, never wildcard)
 const allowedOrigins = [CLIENT_ORIGIN, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'];
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+    return true;
+  }
+  try {
+    const url = new URL(origin);
+    if (url.hostname === 'hirevoxa.com' || url.hostname.endsWith('.hirevoxa.com')) return true;
+    if (url.hostname === 'hirevoxa.vercel.app' || url.hostname.endsWith('.vercel.app')) return true;
+  } catch {
+    return false;
+  }
+  return false;
+};
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
     return callback(new Error('Blocked by CORS policy'));

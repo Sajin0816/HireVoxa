@@ -42,7 +42,11 @@ export const protect = async (req, res, next) => {
       'http://localhost:3000'
     ].filter(Boolean);
 
-    const isOriginAllowed = origin && allowedOrigins.some(o => origin.startsWith(o));
+    const isOriginAllowed = origin && (
+      allowedOrigins.some(o => origin.startsWith(o)) ||
+      origin.includes('.vercel.app') ||
+      origin.includes('hirevoxa.com')
+    );
 
     if (!customHeader && !isOriginAllowed && process.env.NODE_ENV === 'production') {
       return res.status(403).json({
