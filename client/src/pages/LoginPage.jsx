@@ -2,9 +2,9 @@ import React, { useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/common/Button';
+import FieldError from '../components/common/FieldError';
+import { isValidEmail, getInputErrorClass, focusFirstError } from '../utils/validation';
 import { Lock, Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
-
-const isValidEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim());
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -28,11 +28,11 @@ export default function LoginPage() {
     if (!trimmedEmail) {
       errs.email = 'Please enter your work email.';
     } else if (!isValidEmail(trimmedEmail)) {
-      errs.email = 'Enter a valid email address.';
+      errs.email = 'Please enter a valid email address.';
     }
 
     if (!password) {
-      errs.password = 'Please enter your password.';
+      errs.password = 'Password is required.';
     }
 
     return errs;
@@ -46,11 +46,7 @@ export default function LoginPage() {
     setFieldErrors(errs);
 
     if (Object.keys(errs).length > 0) {
-      if (errs.email) {
-        emailInputRef.current?.focus();
-      } else if (errs.password) {
-        passwordInputRef.current?.focus();
-      }
+      focusFirstError(errs, { email: emailInputRef, password: passwordInputRef });
       return;
     }
 
@@ -125,17 +121,12 @@ export default function LoginPage() {
                 aria-invalid={!!fieldErrors.email}
                 aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                 placeholder="Enter your email address"
-                className={`w-full bg-[#202020] border ${
-                  fieldErrors.email ? 'border-[#EF4444]/60 focus:border-[#EF4444]' : 'border-[#303030] focus:border-[#505050]'
-                } rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  fieldErrors.email
+                )} rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
               />
             </div>
-            {fieldErrors.email && (
-              <p id="email-error" className="text-xs text-[#EF4444] mt-1.5 flex items-center gap-1.5" role="alert">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>{fieldErrors.email}</span>
-              </p>
-            )}
+            <FieldError id="email-error" error={fieldErrors.email} />
           </div>
 
           <div>
@@ -159,9 +150,9 @@ export default function LoginPage() {
                 aria-invalid={!!fieldErrors.password}
                 aria-describedby={fieldErrors.password ? 'password-error' : undefined}
                 placeholder="Enter your password"
-                className={`w-full bg-[#202020] border ${
-                  fieldErrors.password ? 'border-[#EF4444]/60 focus:border-[#EF4444]' : 'border-[#303030] focus:border-[#505050]'
-                } rounded-xl pl-10 pr-10 py-2.5 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  fieldErrors.password
+                )} rounded-xl pl-10 pr-10 py-2.5 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
               />
               <button
                 type="button"
@@ -174,12 +165,7 @@ export default function LoginPage() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {fieldErrors.password && (
-              <p id="password-error" className="text-xs text-[#EF4444] mt-1.5 flex items-center gap-1.5" role="alert">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>{fieldErrors.password}</span>
-              </p>
-            )}
+            <FieldError id="password-error" error={fieldErrors.password} />
           </div>
 
           <Button

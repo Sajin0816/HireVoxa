@@ -113,7 +113,7 @@ export default function AdminSettingsPage() {
       )}
 
       {/* Settings Form */}
-      <form onSubmit={handleSave} className="bg-[#141414] border border-[#262626] rounded-xl p-6 space-y-6">
+      <form noValidate onSubmit={handleSave} className="bg-[#141414] border border-[#262626] rounded-xl p-6 space-y-6">
         {/* Registration Gating */}
         <div className="flex items-center justify-between pb-6 border-b border-[#222222]">
           <div className="space-y-0.5 max-w-lg">

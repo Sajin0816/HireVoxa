@@ -143,7 +143,7 @@ export default function HeaderProfile() {
             </Button>
           </div>
         ) : (
-          <form
+          <form noValidate
             onSubmit={(e) => {
               e.preventDefault();
               setCallBooked(true);

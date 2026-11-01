@@ -4,6 +4,8 @@ import { api } from '../services/api';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
+import FieldError from '../components/common/FieldError';
+import { getInputErrorClass } from '../utils/validation';
 
 export default function InterviewsPage() {
   const [interviews, setInterviews] = useState([]);
@@ -284,7 +286,7 @@ export default function InterviewsPage() {
               aria-invalid={!!formErrors.candidateId}
               aria-describedby={formErrors.candidateId ? 'candidate-error' : undefined}
               className={`w-full bg-[#202020] border ${
-                formErrors.candidateId ? 'border-[#EF4444]/60 focus:border-[#EF4444]' : 'border-[#303030] focus:border-[#505050]'
+                getInputErrorClass(formErrors.candidateId)
               } rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] focus:outline-none transition-colors`}
             >
               <option value="">Select candidate...</option>
@@ -294,12 +296,7 @@ export default function InterviewsPage() {
                 </option>
               ))}
             </select>
-            {formErrors.candidateId && (
-              <p id="candidate-error" className="text-xs text-[#EF4444] mt-1.5 flex items-center gap-1.5" role="alert">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>{formErrors.candidateId}</span>
-              </p>
-            )}
+            <FieldError id="candidate-error" error={formErrors.candidateId} />
           </div>
 
           <div>
@@ -315,7 +312,7 @@ export default function InterviewsPage() {
               aria-invalid={!!formErrors.jobId}
               aria-describedby={formErrors.jobId ? 'job-error' : undefined}
               className={`w-full bg-[#202020] border ${
-                formErrors.jobId ? 'border-[#EF4444]/60 focus:border-[#EF4444]' : 'border-[#303030] focus:border-[#505050]'
+                getInputErrorClass(formErrors.jobId)
               } rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] focus:outline-none transition-colors`}
             >
               <option value="">Select open position...</option>
@@ -325,12 +322,7 @@ export default function InterviewsPage() {
                 </option>
               ))}
             </select>
-            {formErrors.jobId && (
-              <p id="job-error" className="text-xs text-[#EF4444] mt-1.5 flex items-center gap-1.5" role="alert">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>{formErrors.jobId}</span>
-              </p>
-            )}
+            <FieldError id="job-error" error={formErrors.jobId} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -348,15 +340,10 @@ export default function InterviewsPage() {
                 aria-invalid={!!formErrors.proposedDate}
                 aria-describedby={formErrors.proposedDate ? 'date-error' : undefined}
                 className={`w-full bg-[#202020] border ${
-                  formErrors.proposedDate ? 'border-[#EF4444]/60 focus:border-[#EF4444]' : 'border-[#303030] focus:border-[#505050]'
+                  getInputErrorClass(formErrors.proposedDate)
                 } rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] focus:outline-none transition-colors`}
               />
-              {formErrors.proposedDate && (
-                <p id="date-error" className="text-xs text-[#EF4444] mt-1.5 flex items-center gap-1.5" role="alert">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>{formErrors.proposedDate}</span>
-                </p>
-              )}
+              <FieldError id="date-error" error={formErrors.proposedDate} />
             </div>
             <div>
               <label htmlFor="int-tz" className="block text-[#A3A3A3] mb-1 font-medium">Timezone</label>

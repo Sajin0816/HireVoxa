@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import FieldError from '../components/common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../utils/validation';
 import { Link } from 'react-router-dom';
 import { Users, Search, Filter, Calendar, ExternalLink, MapPin, Bookmark, BookmarkCheck, Globe, CheckCircle, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
@@ -19,6 +21,8 @@ export default function TalentsPage() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
   const [shortlistedIds, setShortlistedIds] = useState(new Set());
+  const [formErrors, setFormErrors] = useState({});
+  const interviewDateRef = useRef(null);
   const [interviewDate, setInterviewDate] = useState(
     new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16)
   );
@@ -419,16 +423,27 @@ export default function TalentsPage() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleScheduleSubmit} className="space-y-4">
+          <form noValidate onSubmit={handleScheduleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Proposed Date & Time</label>
+              <label htmlFor="talent-interviewDate" className="block text-xs font-medium text-[#A3A3A3] mb-1">Proposed Date & Time</label>
               <input
+                id="talent-interviewDate"
+                ref={interviewDateRef}
                 type="datetime-local"
-                required
                 value={interviewDate}
-                onChange={(e) => setInterviewDate(e.target.value)}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#777777]"
+                onChange={(e) => {
+                  setInterviewDate(e.target.value);
+                  if (formErrors.interviewDate) setFormErrors((prev) => ({ ...prev, interviewDate: '' }));
+                }}
+                aria-invalid={!!formErrors.interviewDate}
+                aria-describedby={formErrors.interviewDate ? 'talent-interviewDate-error' : undefined}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  formErrors.interviewDate,
+                  'border-[#303030] focus:border-[#777777]',
+                  'border-[#EF4444]/60 focus:border-[#EF4444]'
+                )} rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none transition-colors`}
               />
+              <FieldError id="talent-interviewDate-error" error={formErrors.interviewDate} />
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-[#303030]">
               <Button variant="ghost" size="sm" onClick={() => setShowScheduleModal(false)}>

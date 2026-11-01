@@ -171,7 +171,7 @@ export default function MessagesPage() {
           </div>
 
           {/* Chat Input Bar */}
-          <form onSubmit={handleSend} className="p-4 border-t border-[#303030] bg-[#101010] flex items-center gap-2">
+          <form noValidate onSubmit={handleSend} className="p-4 border-t border-[#303030] bg-[#101010] flex items-center gap-2">
             <input
               type="text"
               value={text}

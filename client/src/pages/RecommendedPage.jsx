@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import FieldError from '../components/common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../utils/validation';
 import { Sparkles, Calendar, Bookmark, BookmarkCheck, Filter, Info, CheckCircle, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import SkillIcon from '../components/common/SkillIcon';
@@ -16,6 +18,8 @@ export default function RecommendedPage() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
   const [shortlistedIds, setShortlistedIds] = useState(new Set());
+  const [formErrors, setFormErrors] = useState({});
+  const proposedDateRef = useRef(null);
   const [interviewForm, setInterviewForm] = useState({
     proposedDate: new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16),
     timeZone: 'EST',
@@ -392,16 +396,27 @@ export default function RecommendedPage() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleScheduleSubmit} className="space-y-4">
+                    <form noValidate onSubmit={handleScheduleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Proposed Date & Time</label>
+              <label htmlFor="rec-proposedDate" className="block text-xs font-medium text-[#A3A3A3] mb-1">Proposed Date & Time</label>
               <input
+                id="rec-proposedDate"
+                ref={proposedDateRef}
                 type="datetime-local"
-                required
                 value={interviewForm.proposedDate}
-                onChange={(e) => setInterviewForm({ ...interviewForm, proposedDate: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#777777]"
+                onChange={(e) => {
+                  setInterviewForm({ ...interviewForm, proposedDate: e.target.value });
+                  if (formErrors.proposedDate) setFormErrors((prev) => ({ ...prev, proposedDate: '' }));
+                }}
+                aria-invalid={!!formErrors.proposedDate}
+                aria-describedby={formErrors.proposedDate ? 'rec-proposedDate-error' : undefined}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  formErrors.proposedDate,
+                  'border-[#303030] focus:border-[#777777]',
+                  'border-[#EF4444]/60 focus:border-[#EF4444]'
+                )} rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none transition-colors`}
               />
+              <FieldError id="rec-proposedDate-error" error={formErrors.proposedDate} />
             </div>
             <div>
               <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Timezone</label>

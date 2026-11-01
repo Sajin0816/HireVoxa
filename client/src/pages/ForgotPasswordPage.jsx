@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/common/Button';
-import { Mail, CheckCircle2, ArrowLeft, AlertCircle } from 'lucide-react';
-
-const isValidEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim());
+import FieldError from '../components/common/FieldError';
+import { isValidEmail, getInputErrorClass } from '../utils/validation';
+import { Mail, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
       return;
     }
     if (!isValidEmail(trimmed)) {
-      setEmailError('Enter a valid email address.');
+      setEmailError('Please enter a valid email address.');
       emailInputRef.current?.focus();
       return;
     }
@@ -81,17 +81,12 @@ export default function ForgotPasswordPage() {
                     aria-invalid={!!emailError}
                     aria-describedby={emailError ? 'reset-email-error' : undefined}
                     placeholder="Enter your email address"
-                    className={`w-full bg-[#202020] border ${
-                      emailError ? 'border-[#EF4444]/60 focus:border-[#EF4444]' : 'border-[#303030] focus:border-[#505050]'
-                    } rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
+                    className={`w-full bg-[#202020] border ${getInputErrorClass(
+                      emailError
+                    )} rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
                   />
                 </div>
-                {emailError && (
-                  <p id="reset-email-error" className="text-xs text-[#EF4444] mt-1.5 flex items-center gap-1.5" role="alert">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{emailError}</span>
-                  </p>
-                )}
+                <FieldError id="reset-email-error" error={emailError} />
               </div>
 
               <Button type="submit" variant="primary" size="md" className="w-full font-semibold text-xs py-2.5">
@@ -99,10 +94,10 @@ export default function ForgotPasswordPage() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-[#303030] text-center">
-              <Link to="/login" className="inline-flex items-center gap-2 text-xs text-[#A3A3A3] hover:text-[#F5F5F5] transition-colors">
+            <div className="mt-6 text-center">
+              <Link to="/login" className="text-xs text-[#A3A3A3] hover:text-[#F5F5F5] transition-colors inline-flex items-center gap-1.5">
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Return to Sign In</span>
+                Back to Sign In
               </Link>
             </div>
           </>

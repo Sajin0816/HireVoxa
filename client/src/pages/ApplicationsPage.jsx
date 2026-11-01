@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   FileText,
@@ -11,6 +11,8 @@ import {
 import { api } from '../services/api';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
+import FieldError from '../components/common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../utils/validation';
 
 const STATUS_FILTERS = [
   'All',
@@ -48,6 +50,9 @@ export default function ApplicationsPage() {
     notes: '',
     interviewerName: ''
   });
+
+  const [interviewFormErrors, setInterviewFormErrors] = useState({});
+  const proposedDateRef = useRef(null);
 
   // Internal note state
   const [internalNoteText, setInternalNoteText] = useState('');
@@ -174,6 +179,16 @@ export default function ApplicationsPage() {
   const handleScheduleInterview = async (e) => {
     e.preventDefault();
     if (!activeApp) return;
+
+    const errs = {};
+    if (!interviewForm.proposedDate?.trim()) {
+      errs.proposedDate = 'Please select a date and time for the interview.';
+    }
+    setInterviewFormErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      focusFirstError(errs, { proposedDate: proposedDateRef });
+      return;
+    }
     setSubmittingAction(true);
     setActionError('');
     try {
@@ -266,7 +281,7 @@ export default function ApplicationsPage() {
 
         {/* Job dropdown and search */}
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_260px] gap-3">
-          <form onSubmit={handleSearchSubmit} className="relative">
+          <form noValidate onSubmit={handleSearchSubmit} className="relative">
             <Search className="w-4 h-4 text-[#777777] absolute left-3.5 top-3" />
             <input
               type="text"
@@ -616,13 +631,13 @@ export default function ApplicationsPage() {
               Proposing an interview for <strong className="text-white">{activeApp.candidate?.name || 'Applicant'}</strong> ({activeApp.job?.title}).
             </p>
 
-            <form onSubmit={handleScheduleInterview} className="space-y-4">
+            <form noValidate onSubmit={handleScheduleInterview} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Interview Type</label>
                 <select
                   value={interviewForm.interviewType}
                   onChange={(e) => setInterviewForm({ ...interviewForm, interviewType: e.target.value })}
-                  className="w-full bg-[#141414] border border-[#333333] rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-[#141414] border border-[#333333] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#606060]"
                 >
                   <option value="Technical Screen">Technical Screen (30m)</option>
                   <option value="System Architecture">System Architecture (60m)</option>
@@ -633,14 +648,27 @@ export default function ApplicationsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Date & Time</label>
+                <label htmlFor="app-proposedDate" className="block text-xs font-medium text-[#A3A3A3] mb-1">Date & Time</label>
                 <input
                   type="datetime-local"
-                  required
+                  ref={proposedDateRef}
+                  id="app-proposedDate"
                   value={interviewForm.proposedDate}
-                  onChange={(e) => setInterviewForm({ ...interviewForm, proposedDate: e.target.value })}
-                  className="w-full bg-[#141414] border border-[#333333] rounded-xl px-3 py-2 text-xs text-white"
+                  onChange={(e) => {
+                    setInterviewForm({ ...interviewForm, proposedDate: e.target.value });
+                    if (interviewFormErrors.proposedDate) {
+                      setInterviewFormErrors((prev) => ({ ...prev, proposedDate: '' }));
+                    }
+                  }}
+                  aria-invalid={!!interviewFormErrors.proposedDate}
+                  aria-describedby={interviewFormErrors.proposedDate ? 'app-proposedDate-error' : undefined}
+                  className={`w-full bg-[#141414] border ${getInputErrorClass(
+                    interviewFormErrors.proposedDate,
+                    'border-[#333333] focus:border-[#606060]',
+                    'border-[#EF4444]/60 focus:border-[#EF4444]'
+                  )} rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-colors`}
                 />
+                <FieldError id="app-proposedDate-error" error={interviewFormErrors.proposedDate} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -649,7 +677,7 @@ export default function ApplicationsPage() {
                   <select
                     value={interviewForm.timeZone}
                     onChange={(e) => setInterviewForm({ ...interviewForm, timeZone: e.target.value })}
-                    className="w-full bg-[#141414] border border-[#333333] rounded-xl px-3 py-2 text-xs text-white"
+                    className="w-full bg-[#141414] border border-[#333333] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#606060]"
                   >
                     <option value="EST">EST (UTC-5)</option>
                     <option value="CST">CST (UTC-6)</option>
@@ -665,7 +693,7 @@ export default function ApplicationsPage() {
                     placeholder="e.g. Lead Architect"
                     value={interviewForm.interviewerName}
                     onChange={(e) => setInterviewForm({ ...interviewForm, interviewerName: e.target.value })}
-                    className="w-full bg-[#141414] border border-[#333333] rounded-xl px-3 py-2 text-xs text-white"
+                    className="w-full bg-[#141414] border border-[#333333] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#606060]"
                   />
                 </div>
               </div>

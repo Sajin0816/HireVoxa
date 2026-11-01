@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Briefcase, Search, Plus, Filter, Eye, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Briefcase, Search, Plus, Eye, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import SkillIcon from '../components/common/SkillIcon';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
+import FieldError from '../components/common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../utils/validation';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
@@ -16,6 +18,12 @@ export default function JobsPage() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createSuccess, setCreateSuccess] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  // Input refs for accessibility focus
+  const titleRef = useRef(null);
+  const skillsRef = useRef(null);
+  const descRef = useRef(null);
 
   // New Job Form
   const [newJob, setNewJob] = useState({
@@ -75,8 +83,34 @@ export default function JobsPage() {
     }
   };
 
+  const validateCreate = () => {
+    const errs = {};
+    if (!newJob.title?.trim()) {
+      errs.title = 'Please enter a job title.';
+    }
+    if (!newJob.requiredSkills?.trim()) {
+      errs.requiredSkills = 'Please list required skills.';
+    }
+    if (!newJob.description?.trim()) {
+      errs.description = 'Please enter a job description.';
+    }
+    return errs;
+  };
+
   const handleCreateJob = async (e) => {
     e.preventDefault();
+    const errs = validateCreate();
+    setFieldErrors(errs);
+
+    if (Object.keys(errs).length > 0) {
+      focusFirstError(errs, {
+        title: titleRef,
+        requiredSkills: skillsRef,
+        description: descRef
+      });
+      return;
+    }
+
     setCreateLoading(true);
     try {
       const skillsArray = typeof newJob.requiredSkills === 'string'
@@ -88,6 +122,7 @@ export default function JobsPage() {
         requiredSkills: skillsArray
       });
       setCreateSuccess(true);
+      setFieldErrors({});
       fetchJobs();
       setNewJob({
         title: '',
@@ -127,6 +162,7 @@ export default function JobsPage() {
           icon={Plus}
           onClick={() => {
             setCreateSuccess(false);
+            setFieldErrors({});
             setShowCreateModal(true);
           }}
           className="text-xs font-semibold"
@@ -344,17 +380,27 @@ export default function JobsPage() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleCreateJob} className="space-y-4">
+          <form noValidate onSubmit={handleCreateJob} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Job Title</label>
+              <label htmlFor="create-job-title" className="block text-xs font-medium text-[#A3A3A3] mb-1">Job Title</label>
               <input
+                id="create-job-title"
+                ref={titleRef}
                 type="text"
-                required
                 placeholder="e.g. Senior DevOps & Cloud Engineer"
                 value={newJob.title}
-                onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none focus:border-[#777777]"
+                onChange={(e) => {
+                  setNewJob({ ...newJob, title: e.target.value });
+                  if (fieldErrors.title) setFieldErrors((prev) => ({ ...prev, title: '' }));
+                }}
+                aria-invalid={!!fieldErrors.title}
+                aria-describedby={fieldErrors.title ? 'create-job-title-error' : undefined}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  fieldErrors.title,
+                  'border-[#303030] focus:border-[#777777]'
+                )} rounded-xl px-3 py-2 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
               />
+              <FieldError id="create-job-title-error" error={fieldErrors.title} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -380,15 +426,25 @@ export default function JobsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Required Skills (comma separated)</label>
+              <label htmlFor="create-job-skills" className="block text-xs font-medium text-[#A3A3A3] mb-1">Required Skills (comma separated)</label>
               <input
+                id="create-job-skills"
+                ref={skillsRef}
                 type="text"
-                required
                 placeholder="Docker, Kubernetes, AWS, Terraform"
                 value={newJob.requiredSkills}
-                onChange={(e) => setNewJob({ ...newJob, requiredSkills: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#777777]"
+                onChange={(e) => {
+                  setNewJob({ ...newJob, requiredSkills: e.target.value });
+                  if (fieldErrors.requiredSkills) setFieldErrors((prev) => ({ ...prev, requiredSkills: '' }));
+                }}
+                aria-invalid={!!fieldErrors.requiredSkills}
+                aria-describedby={fieldErrors.requiredSkills ? 'create-job-skills-error' : undefined}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  fieldErrors.requiredSkills,
+                  'border-[#303030] focus:border-[#777777]'
+                )} rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none transition-colors`}
               />
+              <FieldError id="create-job-skills-error" error={fieldErrors.requiredSkills} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -416,14 +472,25 @@ export default function JobsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Description & Scope</label>
+              <label htmlFor="create-job-desc" className="block text-xs font-medium text-[#A3A3A3] mb-1">Description & Scope</label>
               <textarea
+                id="create-job-desc"
+                ref={descRef}
                 rows={3}
-                required
+                placeholder="Describe role responsibilities and requirements..."
                 value={newJob.description}
-                onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl p-3 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none focus:border-[#777777]"
+                onChange={(e) => {
+                  setNewJob({ ...newJob, description: e.target.value });
+                  if (fieldErrors.description) setFieldErrors((prev) => ({ ...prev, description: '' }));
+                }}
+                aria-invalid={!!fieldErrors.description}
+                aria-describedby={fieldErrors.description ? 'create-job-desc-error' : undefined}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  fieldErrors.description,
+                  'border-[#303030] focus:border-[#777777]'
+                )} rounded-xl p-3 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
               />
+              <FieldError id="create-job-desc-error" error={fieldErrors.description} />
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-[#303030]">

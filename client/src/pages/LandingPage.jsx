@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import FieldError from '../components/common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../utils/validation';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -25,6 +27,27 @@ import Hero3DCanvas from '../components/home/Hero3DCanvas';
 export default function LandingPage() {
   const [showHireModal, setShowHireModal] = useState(false);
   const [hireSubmitted, setHireSubmitted] = useState(false);
+  const [hireForm, setHireForm] = useState({ role: '', techStack: '' });
+  const [hireErrors, setHireErrors] = useState({});
+  const roleInputRef = useRef(null);
+  const techStackInputRef = useRef(null);
+
+  const handleHireSubmit = (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (!hireForm.role.trim()) {
+      errs.role = 'Please enter the target engineering role.';
+    }
+    if (!hireForm.techStack.trim()) {
+      errs.techStack = 'Please specify the primary tech stack.';
+    }
+    setHireErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      focusFirstError(errs, { role: roleInputRef, techStack: techStackInputRef });
+      return;
+    }
+    setHireSubmitted(true);
+  };
   const [openFaq, setOpenFaq] = useState(null);
 
   const featuredRoles = [
@@ -624,31 +647,55 @@ export default function LandingPage() {
           </div>
         ) : (
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setHireSubmitted(true);
-            }}
+            noValidate
+            onSubmit={handleHireSubmit}
             className="space-y-4"
           >
             <div>
-              <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Target Engineering Role</label>
+              <label htmlFor="landing-hire-role" className="block text-xs font-medium text-[#A3A3A3] mb-1">Target Engineering Role</label>
               <input
+                id="landing-hire-role"
+                ref={roleInputRef}
                 type="text"
-                required
                 placeholder="e.g. Senior Frontend React Engineer"
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none focus:border-[#777777]"
+                value={hireForm.role}
+                onChange={(e) => {
+                  setHireForm({ ...hireForm, role: e.target.value });
+                  if (hireErrors.role) setHireErrors((prev) => ({ ...prev, role: '' }));
+                }}
+                aria-invalid={!!hireErrors.role}
+                aria-describedby={hireErrors.role ? 'landing-hire-role-error' : undefined}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  hireErrors.role,
+                  'border-[#303030] focus:border-[#777777]',
+                  'border-[#EF4444]/60 focus:border-[#EF4444]'
+                )} rounded-xl px-3 py-2 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
               />
+              <FieldError id="landing-hire-role-error" error={hireErrors.role} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Primary Tech Stack</label>
+                <label htmlFor="landing-hire-tech" className="block text-xs font-medium text-[#A3A3A3] mb-1">Primary Tech Stack</label>
                 <input
+                  id="landing-hire-tech"
+                  ref={techStackInputRef}
                   type="text"
-                  required
                   placeholder="React, TypeScript, Node"
-                  className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none focus:border-[#777777]"
+                  value={hireForm.techStack}
+                  onChange={(e) => {
+                    setHireForm({ ...hireForm, techStack: e.target.value });
+                    if (hireErrors.techStack) setHireErrors((prev) => ({ ...prev, techStack: '' }));
+                  }}
+                  aria-invalid={!!hireErrors.techStack}
+                  aria-describedby={hireErrors.techStack ? 'landing-hire-tech-error' : undefined}
+                  className={`w-full bg-[#202020] border ${getInputErrorClass(
+                    hireErrors.techStack,
+                    'border-[#303030] focus:border-[#777777]',
+                    'border-[#EF4444]/60 focus:border-[#EF4444]'
+                  )} rounded-xl px-3 py-2 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
                 />
+                <FieldError id="landing-hire-tech-error" error={hireErrors.techStack} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Target Monthly Budget (USD)</label>

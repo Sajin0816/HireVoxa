@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import FieldError from '../../components/common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../../utils/validation';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -40,6 +42,9 @@ export default function AdminSupportPage() {
   const [ticketUserEmail, setTicketUserEmail] = useState('');
   const [creatingTicket, setCreatingTicket] = useState(false);
   const [createFeedback, setCreateFeedback] = useState({ text: '', type: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const subjectRef = useRef(null);
+  const descRef = useRef(null);
 
   const isAnalyst = currentUser?.adminRole === 'analyst';
 
@@ -114,6 +119,18 @@ export default function AdminSupportPage() {
 
   const handleCreateTicketSubmit = async (e) => {
     e.preventDefault();
+    const errs = {};
+    if (!ticketSubject.trim()) {
+      errs.ticketSubject = 'Please enter a ticket subject.';
+    }
+    if (!ticketDesc.trim()) {
+      errs.ticketDesc = 'Please describe the issue or support request.';
+    }
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      focusFirstError(errs, { ticketSubject: subjectRef, ticketDesc: descRef });
+      return;
+    }
     setCreatingTicket(true);
     setCreateFeedback({ text: '', type: '' });
     try {
@@ -208,7 +225,7 @@ export default function AdminSupportPage() {
 
       {/* Filter and Search Bar */}
       <div className="p-4 bg-[#141414] border border-[#262626] rounded-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <form onSubmit={handleSearchSubmit} className="relative flex-1">
+        <form noValidate onSubmit={handleSearchSubmit} className="relative flex-1">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -405,7 +422,7 @@ export default function AdminSupportPage() {
 
             {/* Add Note Form */}
             {!isAnalyst && (
-              <form onSubmit={handleAddNote} className="border-t border-[#262626] pt-3 flex gap-2">
+              <form noValidate onSubmit={handleAddNote} className="border-t border-[#262626] pt-3 flex gap-2">
                 <input
                   type="text"
                   placeholder="Add internal investigation note..."
@@ -451,29 +468,51 @@ export default function AdminSupportPage() {
               </div>
             )}
 
-            <form onSubmit={handleCreateTicketSubmit} className="space-y-4 text-xs">
+            <form noValidate onSubmit={handleCreateTicketSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">Subject</label>
+                <label htmlFor="admin-ticket-subject" className="block text-zinc-300 font-medium mb-1">Subject</label>
                 <input
+                  id="admin-ticket-subject"
+                  ref={subjectRef}
                   type="text"
-                  required
                   placeholder="Brief summary of the issue..."
                   value={ticketSubject}
-                  onChange={(e) => setTicketSubject(e.target.value)}
-                  className="w-full bg-[#1F1F1F] border border-[#333333] rounded-lg p-2.5 text-zinc-200 focus:outline-none focus:border-rose-500"
+                  onChange={(e) => {
+                    setTicketSubject(e.target.value);
+                    if (fieldErrors.ticketSubject) setFieldErrors((prev) => ({ ...prev, ticketSubject: '' }));
+                  }}
+                  aria-invalid={!!fieldErrors.ticketSubject}
+                  aria-describedby={fieldErrors.ticketSubject ? 'admin-ticket-subject-error' : undefined}
+                  className={`w-full bg-[#1F1F1F] border ${getInputErrorClass(
+                    fieldErrors.ticketSubject,
+                    'border-[#333333] focus:border-rose-500',
+                    'border-[#EF4444]/60 focus:border-[#EF4444]'
+                  )} rounded-lg p-2.5 text-zinc-200 focus:outline-none transition-colors`}
                 />
+                <FieldError id="admin-ticket-subject-error" error={fieldErrors.ticketSubject} />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">Description</label>
+                <label htmlFor="admin-ticket-desc" className="block text-zinc-300 font-medium mb-1">Description</label>
                 <textarea
+                  id="admin-ticket-desc"
+                  ref={descRef}
                   rows={3}
-                  required
                   placeholder="Full details of the incident or reported behavior..."
                   value={ticketDesc}
-                  onChange={(e) => setTicketDesc(e.target.value)}
-                  className="w-full bg-[#1F1F1F] border border-[#333333] rounded-lg p-2.5 text-zinc-200 focus:outline-none focus:border-rose-500"
+                  onChange={(e) => {
+                    setTicketDesc(e.target.value);
+                    if (fieldErrors.ticketDesc) setFieldErrors((prev) => ({ ...prev, ticketDesc: '' }));
+                  }}
+                  aria-invalid={!!fieldErrors.ticketDesc}
+                  aria-describedby={fieldErrors.ticketDesc ? 'admin-ticket-desc-error' : undefined}
+                  className={`w-full bg-[#1F1F1F] border ${getInputErrorClass(
+                    fieldErrors.ticketDesc,
+                    'border-[#333333] focus:border-rose-500',
+                    'border-[#EF4444]/60 focus:border-[#EF4444]'
+                  )} rounded-lg p-2.5 text-zinc-200 focus:outline-none transition-colors`}
                 />
+                <FieldError id="admin-ticket-desc-error" error={fieldErrors.ticketDesc} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">

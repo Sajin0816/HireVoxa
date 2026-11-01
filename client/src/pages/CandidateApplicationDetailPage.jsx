@@ -245,7 +245,7 @@ export default function CandidateApplicationDetailPage() {
               </div>
             )}
 
-            <form onSubmit={handleWithdraw} className="space-y-3 pt-2">
+            <form noValidate onSubmit={handleWithdraw} className="space-y-3 pt-2">
               <div>
                 <label className="block text-xs font-medium text-[#A3A3A3] mb-1">
                   Reason for withdrawal (optional)

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import FieldError from '../../components/common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../../utils/validation';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -34,6 +36,8 @@ export default function AdminUsersPage() {
   const [targetAdminRole, setTargetAdminRole] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState({ text: '', type: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const actionReasonRef = useRef(null);
 
   const isAnalyst = currentUser?.adminRole === 'analyst';
   const isOwner = currentUser?.adminRole === 'owner';
@@ -150,7 +154,7 @@ export default function AdminUsersPage() {
 
       {/* Filter and Search Bar */}
       <div className="p-4 bg-[#141414] border border-[#262626] rounded-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <form onSubmit={handleSearchSubmit} className="relative flex-1">
+        <form noValidate onSubmit={handleSearchSubmit} className="relative flex-1">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -360,24 +364,35 @@ export default function AdminUsersPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmitAction} className="space-y-4">
+            <form noValidate onSubmit={handleSubmitAction} className="space-y-4">
               {actionType === 'suspend' || actionType === 'reactivate' ? (
                 <div>
                   <label className="block text-xs font-medium text-zinc-300 mb-1">
                     Operational Reason {actionType === 'suspend' ? '(Required)' : '(Optional)'}
                   </label>
                   <textarea
+                    id="admin-user-reason"
+                    ref={actionReasonRef}
                     rows={3}
-                    required={actionType === 'suspend'}
                     placeholder={
                       actionType === 'suspend'
                         ? 'Describe violation or reason for suspension...'
                         : 'Reason for reactivation...'
                     }
                     value={actionReason}
-                    onChange={(e) => setActionReason(e.target.value)}
-                    className="w-full bg-[#1F1F1F] border border-[#333333] rounded-lg p-3 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                    onChange={(e) => {
+                      setActionReason(e.target.value);
+                      if (fieldErrors.actionReason) setFieldErrors((prev) => ({ ...prev, actionReason: '' }));
+                    }}
+                    aria-invalid={!!fieldErrors.actionReason}
+                    aria-describedby={fieldErrors.actionReason ? 'admin-user-reason-error' : undefined}
+                    className={`w-full bg-[#1F1F1F] border ${getInputErrorClass(
+                      fieldErrors.actionReason,
+                      'border-[#333333] focus:border-emerald-500',
+                      'border-[#EF4444]/60 focus:border-[#EF4444]'
+                    )} rounded-lg p-3 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none transition-colors`}
                   />
+                  <FieldError id="admin-user-reason-error" error={fieldErrors.actionReason} />
                   <p className="text-[11px] text-zinc-500 mt-1">
                     This action will be appended to the immutable administrative audit log.
                   </p>

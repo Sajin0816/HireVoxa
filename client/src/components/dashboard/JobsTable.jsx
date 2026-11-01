@@ -5,6 +5,8 @@ import SkillIcon from '../common/SkillIcon';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
+import FieldError from '../common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../../utils/validation';
 import { api } from '../../services/api';
 
 export default function JobsTable({ jobs = [], onJobUpdated, onJobCreated }) {
@@ -308,15 +310,10 @@ export default function JobsTable({ jobs = [], onJobUpdated, onJobCreated }) {
               aria-invalid={!!modalFieldErrors.title}
               aria-describedby={modalFieldErrors.title ? 'job-title-error' : undefined}
               className={`w-full bg-[#202020] border ${
-                modalFieldErrors.title ? 'border-[#EF4444]/60 focus:border-[#EF4444]' : 'border-[#303030] focus:border-[#777777]'
+                getInputErrorClass(modalFieldErrors.title, 'border-[#303030] focus:border-[#777777]', 'border-[#EF4444]/60 focus:border-[#EF4444]')
               } rounded-xl px-3 py-2 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
             />
-            {modalFieldErrors.title && (
-              <p id="job-title-error" className="text-xs text-[#EF4444] mt-1.5 flex items-center gap-1.5" role="alert">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>{modalFieldErrors.title}</span>
-              </p>
-            )}
+            <FieldError id="job-title-error" error={modalFieldErrors.title} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -392,15 +389,10 @@ export default function JobsTable({ jobs = [], onJobUpdated, onJobCreated }) {
               aria-describedby={modalFieldErrors.description ? 'job-desc-error' : undefined}
               placeholder="Describe role responsibilities, team structure, and technical requirements..."
               className={`w-full bg-[#202020] border ${
-                modalFieldErrors.description ? 'border-[#EF4444]/60 focus:border-[#EF4444]' : 'border-[#303030] focus:border-[#777777]'
+                getInputErrorClass(modalFieldErrors.description, 'border-[#303030] focus:border-[#777777]', 'border-[#EF4444]/60 focus:border-[#EF4444]')
               } rounded-xl p-3 text-xs text-[#F5F5F5] placeholder-[#777777] focus:outline-none transition-colors`}
             />
-            {modalFieldErrors.description && (
-              <p id="job-desc-error" className="text-xs text-[#EF4444] mt-1.5 flex items-center gap-1.5" role="alert">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>{modalFieldErrors.description}</span>
-              </p>
-            )}
+            <FieldError id="job-desc-error" error={modalFieldErrors.description} />
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-[#303030]">

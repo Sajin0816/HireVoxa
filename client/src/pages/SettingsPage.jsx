@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import FieldError from '../components/common/FieldError';
+import { isValidEmail, getInputErrorClass, focusFirstError } from '../utils/validation';
 import { Settings, Shield, Bell, User, CheckCircle2 } from 'lucide-react';
 import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
@@ -19,9 +21,26 @@ export default function SettingsPage() {
   });
 
   const [savedNotice, setSavedNotice] = useState(false);
+  const [errors, setErrors] = useState({});
+  const nameRef = useRef(null);
+  const emailRef = useRef(null);
 
   const handleSave = (e) => {
     e.preventDefault();
+    const errs = {};
+    if (!profile.name?.trim()) {
+      errs.name = 'Please enter your full name.';
+    }
+    if (!profile.email?.trim()) {
+      errs.email = 'Please enter your email address.';
+    } else if (!isValidEmail(profile.email)) {
+      errs.email = 'Please enter a valid email address.';
+    }
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      focusFirstError(errs, { name: nameRef, email: emailRef });
+      return;
+    }
     setSavedNotice(true);
     setTimeout(() => setSavedNotice(false), 3000);
   };
@@ -53,25 +72,49 @@ export default function SettingsPage() {
           <span>Account Profile</span>
         </h3>
 
-        <form onSubmit={handleSave} className="space-y-5 max-w-2xl">
+        <form noValidate onSubmit={handleSave} className="space-y-5 max-w-2xl">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-[#D4D4D4] mb-2">Display Name</label>
+              <label htmlFor="settings-name" className="block text-sm font-medium text-[#D4D4D4] mb-2">Display Name</label>
               <input
+                id="settings-name"
+                ref={nameRef}
                 type="text"
                 value={profile.name}
-                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-4 py-2.5 text-sm text-[#F5F5F5] focus:outline-none focus:border-[#606060] transition-colors"
+                onChange={(e) => {
+                  setProfile({ ...profile, name: e.target.value });
+                  if (errors.name) setErrors((prev) => ({ ...prev, name: '' }));
+                }}
+                aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? 'settings-name-error' : undefined}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  errors.name,
+                  'border-[#303030] focus:border-[#606060]',
+                  'border-[#EF4444]/60 focus:border-[#EF4444]'
+                )} rounded-xl px-4 py-2.5 text-sm text-[#F5F5F5] focus:outline-none transition-colors`}
               />
+              <FieldError id="settings-name-error" error={errors.name} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#D4D4D4] mb-2">Work Email</label>
+              <label htmlFor="settings-email" className="block text-sm font-medium text-[#D4D4D4] mb-2">Work Email</label>
               <input
+                id="settings-email"
+                ref={emailRef}
                 type="email"
                 value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-4 py-2.5 text-sm text-[#F5F5F5] focus:outline-none focus:border-[#606060] transition-colors"
+                onChange={(e) => {
+                  setProfile({ ...profile, email: e.target.value });
+                  if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
+                }}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'settings-email-error' : undefined}
+                className={`w-full bg-[#202020] border ${getInputErrorClass(
+                  errors.email,
+                  'border-[#303030] focus:border-[#606060]',
+                  'border-[#EF4444]/60 focus:border-[#EF4444]'
+                )} rounded-xl px-4 py-2.5 text-sm text-[#F5F5F5] focus:outline-none transition-colors`}
               />
+              <FieldError id="settings-email-error" error={errors.email} />
             </div>
           </div>
 

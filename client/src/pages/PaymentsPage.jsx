@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import FieldError from '../components/common/FieldError';
+import { getInputErrorClass } from '../utils/validation';
 import {
   CreditCard,
   Shield,
@@ -32,6 +34,8 @@ export default function PaymentsPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [cardBrand, setCardBrand] = useState('Visa');
   const [cardLast4, setCardLast4] = useState('4242');
+  const [cardError, setCardError] = useState('');
+  const cardLast4Ref = useRef(null);
   const [cardExpMonth, setCardExpMonth] = useState('12');
   const [cardExpYear, setCardExpYear] = useState('2028');
 
@@ -486,7 +490,7 @@ export default function PaymentsPage() {
           onClose={() => setShowUpgradeModal(false)}
           title="Upgrade to Employer Pro ($199/month)"
         >
-          <form onSubmit={handleUpgradeToPro} className="space-y-5">
+          <form noValidate onSubmit={handleUpgradeToPro} className="space-y-5">
             <div className="bg-[#171717] border border-[#303030] rounded-xl p-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs font-bold text-[#F5F5F5]">Employer Pro Subscription</span>
@@ -529,23 +533,24 @@ export default function PaymentsPage() {
                   Card Number (Test Mode)
                 </label>
                 <input
-                  type="text"
-                  value={`•••• •••• •••• ${cardLast4}`}
-                  disabled
-                  className="w-full bg-[#111111] border border-[#303030] rounded-lg px-3 py-2 text-sm text-[#737373] cursor-not-allowed"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#A3A3A3] uppercase mb-1.5">
-                  Last 4 Digits
-                </label>
-                <input
-                  type="text"
-                  maxLength={4}
-                  value={cardLast4}
-                  onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-[#111111] border border-[#303030] rounded-lg px-3 py-2 text-sm text-[#F5F5F5] focus:outline-none focus:border-[#F59E0B]"
-                />
+                    id="card-last4-input"
+                    ref={cardLast4Ref}
+                    type="text"
+                    maxLength={4}
+                    value={cardLast4}
+                    onChange={(e) => {
+                      setCardLast4(e.target.value.replace(/\D/g, ''));
+                      if (cardError) setCardError('');
+                    }}
+                    aria-invalid={!!cardError}
+                    aria-describedby={cardError ? 'card-last4-error' : undefined}
+                    className={`w-full bg-[#111111] border ${getInputErrorClass(
+                      cardError,
+                      'border-[#303030] focus:border-[#F59E0B]',
+                      'border-[#EF4444]/60 focus:border-[#EF4444]'
+                    )} rounded-lg px-3 py-2 text-sm text-[#F5F5F5] focus:outline-none transition-colors`}
+                  />
+                  <FieldError id="card-last4-error" error={cardError} />
               </div>
             </div>
 

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import FieldError from '../../components/common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../../utils/validation';
 import {
   DollarSign,
   TrendingUp,
@@ -35,6 +37,9 @@ export default function AdminBillingPage() {
   // Dispute Modal State
   const [disputeTarget, setDisputeTarget] = useState(null);
   const [disputeReason, setDisputeReason] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const waiveRef = useRef(null);
+  const disputeRef = useRef(null);
 
   const loadMetrics = async () => {
     try {
@@ -74,11 +79,25 @@ export default function AdminBillingPage() {
   const handleWaiveFee = async (e) => {
     e.preventDefault();
     if (!waiveTarget) return;
+
+    const errs = {};
+    if (!waiveReason.trim()) {
+      errs.waiveReason = 'Please enter an audit justification.';
+    } else if (waiveReason.trim().length < 5) {
+      errs.waiveReason = 'Audit justification must be at least 5 characters.';
+    }
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      focusFirstError(errs, { waiveReason: waiveRef });
+      return;
+    }
+
     try {
       setActionLoading(true);
       const res = await api.adminWaivePlacementFee(waiveTarget._id || waiveTarget.id, waiveReason);
       setWaiveTarget(null);
       setWaiveReason('');
+      setFieldErrors({});
       setNotification({ type: 'success', message: res.message || 'Placement fee waived successfully' });
       await loadMetrics();
     } catch (err) {
@@ -91,11 +110,25 @@ export default function AdminBillingPage() {
   const handleDisputeFee = async (e) => {
     e.preventDefault();
     if (!disputeTarget) return;
+
+    const errs = {};
+    if (!disputeReason.trim()) {
+      errs.disputeReason = 'Please enter a reason for the fee dispute.';
+    } else if (disputeReason.trim().length < 5) {
+      errs.disputeReason = 'Dispute reason must be at least 5 characters.';
+    }
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      focusFirstError(errs, { disputeReason: disputeRef });
+      return;
+    }
+
     try {
       setActionLoading(true);
       const res = await api.adminDisputePlacementFee(disputeTarget._id || disputeTarget.id, disputeReason);
       setDisputeTarget(null);
       setDisputeReason('');
+      setFieldErrors({});
       setNotification({ type: 'info', message: res.message || 'Placement fee marked in dispute' });
       await loadMetrics();
     } catch (err) {
@@ -465,23 +498,34 @@ export default function AdminBillingPage() {
           onClose={() => setWaiveTarget(null)}
           title={`Waive Placement Fee — ${waiveTarget.placementId}`}
         >
-          <form onSubmit={handleWaiveFee} className="space-y-4">
+          <form noValidate onSubmit={handleWaiveFee} className="space-y-4">
             <p className="text-xs text-[#A3A3A3] leading-relaxed">
               Waiving this fee removes the payable amount ($2,500) and marks the record as waived in financial reports. A documented justification is required for the audit trail.
             </p>
 
             <div>
-              <label className="block text-xs font-semibold text-[#A3A3A3] uppercase mb-1.5">
+              <label htmlFor="admin-waive-reason" className="block text-xs font-semibold text-[#A3A3A3] uppercase mb-1.5">
                 Audit Justification (Required)
               </label>
               <textarea
+                id="admin-waive-reason"
+                ref={waiveRef}
                 rows={3}
-                required
                 value={waiveReason}
-                onChange={(e) => setWaiveReason(e.target.value)}
+                onChange={(e) => {
+                  setWaiveReason(e.target.value);
+                  if (fieldErrors.waiveReason) setFieldErrors((prev) => ({ ...prev, waiveReason: '' }));
+                }}
+                aria-invalid={!!fieldErrors.waiveReason}
+                aria-describedby={fieldErrors.waiveReason ? 'admin-waive-reason-error' : undefined}
                 placeholder="e.g. Promotional pilot waiver approved by executive agreement..."
-                className="w-full bg-[#111111] border border-[#303030] rounded-lg px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#EF4444]"
+                className={`w-full bg-[#111111] border ${getInputErrorClass(
+                  fieldErrors.waiveReason,
+                  'border-[#303030] focus:border-[#EF4444]',
+                  'border-[#EF4444]/60 focus:border-[#EF4444]'
+                )} rounded-lg px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none transition-colors`}
               />
+              <FieldError id="admin-waive-reason-error" error={fieldErrors.waiveReason} />
             </div>
 
             <div className="flex justify-end gap-3 pt-3">
@@ -496,7 +540,7 @@ export default function AdminBillingPage() {
               <Button
                 type="submit"
                 variant="danger"
-                disabled={actionLoading || waiveReason.trim().length < 5}
+                disabled={actionLoading}
               >
                 {actionLoading ? 'Waiving...' : 'Confirm Fee Waiver'}
               </Button>
@@ -512,23 +556,34 @@ export default function AdminBillingPage() {
           onClose={() => setDisputeTarget(null)}
           title={`Dispute Placement Fee — ${disputeTarget.placementId}`}
         >
-          <form onSubmit={handleDisputeFee} className="space-y-4">
+          <form noValidate onSubmit={handleDisputeFee} className="space-y-4">
             <p className="text-xs text-[#A3A3A3] leading-relaxed">
               Place this fee in dispute under 90-day replacement policy evaluation. The company will not be billed while this is open.
             </p>
 
             <div>
-              <label className="block text-xs font-semibold text-[#A3A3A3] uppercase mb-1.5">
+              <label htmlFor="admin-dispute-reason" className="block text-xs font-semibold text-[#A3A3A3] uppercase mb-1.5">
                 Dispute Reason
               </label>
               <textarea
+                id="admin-dispute-reason"
+                ref={disputeRef}
                 rows={3}
-                required
                 value={disputeReason}
-                onChange={(e) => setDisputeReason(e.target.value)}
+                onChange={(e) => {
+                  setDisputeReason(e.target.value);
+                  if (fieldErrors.disputeReason) setFieldErrors((prev) => ({ ...prev, disputeReason: '' }));
+                }}
+                aria-invalid={!!fieldErrors.disputeReason}
+                aria-describedby={fieldErrors.disputeReason ? 'admin-dispute-reason-error' : undefined}
                 placeholder="e.g. Early departure within 30 days under replacement guarantee review..."
-                className="w-full bg-[#111111] border border-[#303030] rounded-lg px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#F59E0B]"
+                className={`w-full bg-[#111111] border ${getInputErrorClass(
+                  fieldErrors.disputeReason,
+                  'border-[#303030] focus:border-[#F59E0B]',
+                  'border-[#EF4444]/60 focus:border-[#EF4444]'
+                )} rounded-lg px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none transition-colors`}
               />
+              <FieldError id="admin-dispute-reason-error" error={fieldErrors.disputeReason} />
             </div>
 
             <div className="flex justify-end gap-3 pt-3">
@@ -543,7 +598,7 @@ export default function AdminBillingPage() {
               <Button
                 type="submit"
                 variant="primary"
-                disabled={actionLoading || disputeReason.trim().length < 5}
+                disabled={actionLoading}
                 className="bg-[#F59E0B] text-black font-bold"
               >
                 {actionLoading ? 'Updating...' : 'Log Dispute'}

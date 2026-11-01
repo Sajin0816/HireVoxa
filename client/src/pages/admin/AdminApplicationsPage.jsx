@@ -95,7 +95,7 @@ export default function AdminApplicationsPage() {
 
       {/* Filter and Search Bar */}
       <div className="p-4 bg-[#141414] border border-[#262626] rounded-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <form onSubmit={handleSearchSubmit} className="relative flex-1">
+        <form noValidate onSubmit={handleSearchSubmit} className="relative flex-1">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"

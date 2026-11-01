@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import FieldError from '../common/FieldError';
+import { getInputErrorClass, focusFirstError } from '../../utils/validation';
 import { Link } from 'react-router-dom';
 import { Sparkles, Calendar, CheckCircle } from 'lucide-react';
 import SkillIcon from '../common/SkillIcon';
@@ -11,6 +13,8 @@ export default function RecommendationHero({ candidateMatch, onInterviewSchedule
   const [submitting, setSubmitting] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
   const [scheduleError, setScheduleError] = useState('');
+  const [formErrors, setFormErrors] = useState({});
+  const proposedDateRef = useRef(null);
   const [interviewForm, setInterviewForm] = useState({
     proposedDate: new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16),
     timeZone: 'EST',
@@ -34,6 +38,15 @@ export default function RecommendationHero({ candidateMatch, onInterviewSchedule
 
   const handleScheduleSubmit = async (e) => {
     e.preventDefault();
+    const errs = {};
+    if (!interviewForm.proposedDate?.trim()) {
+      errs.proposedDate = 'Please select a date and time for the interview.';
+    }
+    setFormErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      focusFirstError(errs, { proposedDate: proposedDateRef });
+      return;
+    }
     setSubmitting(true);
     setScheduleError('');
     try {
@@ -137,6 +150,7 @@ export default function RecommendationHero({ candidateMatch, onInterviewSchedule
             icon={Calendar}
             onClick={() => {
               setScheduleSuccess(false);
+              setFormErrors({});
               setShowScheduleModal(true);
             }}
             className="text-xs font-semibold px-5 py-2.5 shrink-0"
@@ -169,7 +183,7 @@ export default function RecommendationHero({ candidateMatch, onInterviewSchedule
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleScheduleSubmit} className="space-y-4">
+          <form noValidate onSubmit={handleScheduleSubmit} className="space-y-4">
             {scheduleError && <p className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-3 text-xs text-[#F87171]">{scheduleError}</p>}
             <div>
               <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Target Role</label>
@@ -183,14 +197,25 @@ export default function RecommendationHero({ candidateMatch, onInterviewSchedule
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Proposed Date & Time</label>
+                <label htmlFor="hero-proposedDate" className="block text-xs font-medium text-[#A3A3A3] mb-1">Proposed Date & Time</label>
                 <input
+                  id="hero-proposedDate"
+                  ref={proposedDateRef}
                   type="datetime-local"
-                  required
                   value={interviewForm.proposedDate}
-                  onChange={(e) => setInterviewForm({ ...interviewForm, proposedDate: e.target.value })}
-                  className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#777777]"
+                  onChange={(e) => {
+                    setInterviewForm({ ...interviewForm, proposedDate: e.target.value });
+                    if (formErrors.proposedDate) setFormErrors((prev) => ({ ...prev, proposedDate: '' }));
+                  }}
+                  aria-invalid={!!formErrors.proposedDate}
+                  aria-describedby={formErrors.proposedDate ? 'hero-proposedDate-error' : undefined}
+                  className={`w-full bg-[#202020] border ${getInputErrorClass(
+                    formErrors.proposedDate,
+                    'border-[#303030] focus:border-[#777777]',
+                    'border-[#EF4444]/60 focus:border-[#EF4444]'
+                  )} rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none transition-colors`}
                 />
+                <FieldError id="hero-proposedDate-error" error={formErrors.proposedDate} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Timezone</label>
