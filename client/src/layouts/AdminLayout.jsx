@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LogoutModal from '../components/common/LogoutModal';
 import {
   LayoutDashboard,
   Users,
@@ -24,10 +25,24 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+  const handleOpenLogout = () => {
+    setMobileMenuOpen(false);
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
+    }
   };
 
   const adminRole = user?.adminRole || 'owner';
@@ -62,8 +77,10 @@ export default function AdminLayout() {
           <span className="font-bold text-white text-base tracking-wide">Hirevoxa Ops</span>
         </Link>
         <button
+          type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="p-2 text-zinc-400 hover:text-white"
+          aria-label="Toggle navigation menu"
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -137,8 +154,9 @@ export default function AdminLayout() {
             <span>Switch to Recruiter App</span>
           </Link>
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 text-xs text-rose-400 hover:text-rose-300 px-3 py-2 rounded-lg hover:bg-rose-500/10 transition-colors"
+            type="button"
+            onClick={handleOpenLogout}
+            className="w-full flex items-center gap-2 text-xs text-rose-400 hover:text-rose-300 px-3 py-2 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Log Out</span>
@@ -156,7 +174,7 @@ export default function AdminLayout() {
           </div>
           <div className="flex items-center gap-3 text-xs">
             <span className="px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700 text-[11px] font-mono">
-              In-Memory Demo Active
+              Operational Mode
             </span>
             <span className="text-zinc-500 hidden sm:inline">|</span>
             <span className="text-zinc-400 hidden sm:inline">Role: <strong className="text-zinc-200">{adminRole}</strong></span>
@@ -170,6 +188,14 @@ export default function AdminLayout() {
           </div>
         </div>
       </main>
+
+      {/* Global Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleConfirmLogout}
+        isSubmitting={isLoggingOut}
+      />
     </div>
   );
 }

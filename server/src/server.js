@@ -99,6 +99,23 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// 6.5. Database Connection Assurance Middleware
+// Guarantees DB connection is established before route handlers run (eliminates cold-start race conditions)
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    if (getDbMode() === 'unavailable') {
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection is temporarily unavailable. Please retry shortly.'
+      });
+    }
+    next();
+  }
+});
+
 // 7. API Resource Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/candidates', candidateRoutes);

@@ -9,6 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
 let activeDbMode = 'unavailable';
+let connectionPromise = null;
 
 /**
  * Sanitizes connection strings and error messages to prevent leaking credentials in logs.
@@ -33,17 +34,29 @@ export function isDemoModeAllowed() {
 
 /**
  * Connects to MongoDB or initializes explicit in-memory demo mode if permitted.
+ * Handles concurrent cold-start requests with a shared connection promise to eliminate race conditions.
  * Fails fast with safe sanitized errors if required MongoDB is missing or unreachable.
  */
 export async function connectDB(overrideUri = null) {
-  // Prevent duplicate connections if already connected or connecting
-  if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
+  // If already connected, ensure operating mode is synchronized and return
+  if (mongoose.connection.readyState === 1) {
+    activeDbMode = 'mongodb';
     return mongoose.connection;
+  }
+
+  // If a connection attempt is currently in-flight, await the existing promise
+  if (connectionPromise) {
+    return connectionPromise;
   }
 
   // Preserve isolated test fixture behavior when running automated test runner unless explicitly testing against live DB
   if (process.env.NODE_ENV === 'test' && !overrideUri && process.env.TEST_WITH_LIVE_DB !== 'true') {
     activeDbMode = 'in-memory-demo';
+    return;
+  }
+
+  // In non-production demo mode where in-memory was already explicitly initialized
+  if (activeDbMode === 'in-memory-demo' && !overrideUri && !process.env.MONGODB_URI) {
     return;
   }
 
@@ -59,35 +72,44 @@ export async function connectDB(overrideUri = null) {
     return;
   }
 
-  let attempts = 0;
-  const maxAttempts = 3;
+  connectionPromise = (async () => {
+    let attempts = 0;
+    const maxAttempts = 3;
 
-  while (attempts < maxAttempts) {
-    try {
-      attempts++;
-      const conn = await mongoose.connect(uri, {
-        serverSelectionTimeoutMS: 10000,
-        dbName: 'hirevoxa'
-      });
-      activeDbMode = 'mongodb';
-      console.log(`[Hirevoxa DB] Connected to MongoDB cluster host: ${conn.connection.host} (Database: ${conn.connection.name})`);
-      return conn;
-    } catch (error) {
-      if (attempts < maxAttempts) {
-        console.warn(`[Hirevoxa DB] Initial connection attempt ${attempts} encountered transient issue (${sanitizeError(error)}). Retrying in 2s...`);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        continue;
-      }
+    while (attempts < maxAttempts) {
+      try {
+        attempts++;
+        const conn = await mongoose.connect(uri, {
+          serverSelectionTimeoutMS: 5000,
+          dbName: 'hirevoxa'
+        });
+        activeDbMode = 'mongodb';
+        console.log(`[Hirevoxa DB] Connected to MongoDB cluster host: ${conn.connection.host} (Database: ${conn.connection.name})`);
+        return conn;
+      } catch (error) {
+        if (attempts < maxAttempts) {
+          console.warn(`[Hirevoxa DB] Initial connection attempt ${attempts} encountered transient issue (${sanitizeError(error)}). Retrying in 2s...`);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          continue;
+        }
 
-      const safeMsg = sanitizeError(error);
-      if (!isDemoModeAllowed()) {
-        activeDbMode = 'unavailable';
-        throw new Error(`[Hirevoxa DB Connection Error] Unable to connect to MongoDB: ${safeMsg}`);
+        const safeMsg = sanitizeError(error);
+        if (!isDemoModeAllowed()) {
+          activeDbMode = 'unavailable';
+          throw new Error(`[Hirevoxa DB Connection Error] Unable to connect to MongoDB: ${safeMsg}`);
+        }
+        activeDbMode = 'in-memory-demo';
+        console.warn(`[Hirevoxa DB] Could not connect to MongoDB (${safeMsg}). Explicit demo mode is allowed in current non-production environment; using in-memory store.`);
+        return;
       }
-      activeDbMode = 'in-memory-demo';
-      console.warn(`[Hirevoxa DB] Could not connect to MongoDB (${safeMsg}). Explicit demo mode is allowed in current non-production environment; using in-memory store.`);
-      return;
     }
+  })();
+
+  try {
+    const result = await connectionPromise;
+    return result;
+  } finally {
+    connectionPromise = null;
   }
 }
 
@@ -95,6 +117,7 @@ export async function connectDB(overrideUri = null) {
  * Cleanly disconnects from MongoDB and resets database state.
  */
 export async function disconnectDB() {
+  connectionPromise = null;
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
     console.log('[Hirevoxa DB] Disconnected cleanly from MongoDB.');

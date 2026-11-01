@@ -7,6 +7,8 @@ import { getDbMode } from '../config/db.js';
 import { Candidate } from '../models/Candidate.js';
 import { isValidEmail } from '../utils/securityUtils.js';
 
+export const normalizeEmail = (val) => (typeof val === 'string' ? val.trim().toLowerCase() : '');
+
 const getJwtSecret = () => {
   if (process.env.JWT_SECRET && process.env.JWT_SECRET !== 'hirevoxa_jwt_secret_dev_2026') {
     return process.env.JWT_SECRET;
@@ -26,7 +28,7 @@ export const setAuthCookie = (res, token) => {
   res.cookie('hirevoxa_token', token, {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'strict' : 'lax',
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/'
   });
@@ -37,7 +39,7 @@ export const clearAuthCookie = (res) => {
   res.clearCookie('hirevoxa_token', {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'strict' : 'lax',
+    sameSite: isProd ? 'none' : 'lax',
     path: '/'
   });
 };
@@ -75,7 +77,10 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Name, email, and password must be valid text strings.' });
     }
 
-    if (!isValidEmail(email)) {
+    const normalizedEmail = normalizeEmail(email);
+    const trimmedName = name.trim();
+
+    if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
       return res.status(400).json({ success: false, error: 'Please provide a valid email address.' });
     }
 
@@ -91,25 +96,30 @@ export const register = async (req, res, next) => {
     const isMongo = getDbMode() === 'mongodb';
 
     if (isMongo) {
-      const existing = await User.findOne({ email: email.toLowerCase() });
+      const existing = await User.findOne({ email: normalizedEmail });
       if (existing) {
         return res.status(400).json({ success: false, error: 'An account with this email already exists.' });
       }
 
-       const assignedCompanyName = companyName || (assignedRole === 'company' ? 'My Tech Startup' : '');
+      const assignedCompanyName = companyName ? companyName.trim() : (assignedRole === 'company' ? 'My Tech Startup' : '');
 
-      const user = await User.create({
-        name,
-        email: email.toLowerCase(),
+      const user = new User({
+        name: trimmedName,
+        email: normalizedEmail,
         password,
         role: assignedRole,
-        companyName: assignedCompanyName
+        companyName: assignedCompanyName,
+        companyId: ''
       });
 
-      // For company users, assign companyId and ensure Company record exists
       if (assignedRole === 'company') {
         user.companyId = String(user._id);
-        await user.save();
+      }
+
+      await user.save();
+
+      // For company users, ensure Company record exists
+      if (assignedRole === 'company') {
         await Company.create({
           name: assignedCompanyName,
           ownerId: String(user._id),
@@ -118,7 +128,7 @@ export const register = async (req, res, next) => {
       } else {
         await Candidate.create({
           userId: String(user._id),
-          name,
+          name: trimmedName,
           title: '',
           yearsOfExperience: null,
           skills: [],
@@ -137,28 +147,30 @@ export const register = async (req, res, next) => {
         user: userObj
       });
     } else {
-      const existing = await inMemoryStore.findUserByEmail(email);
+      const existing = await inMemoryStore.findUserByEmail(normalizedEmail);
       if (existing) {
         return res.status(400).json({ success: false, error: 'An account with this email already exists.' });
       }
 
-      const user = await inMemoryStore.createUser({
-        name,
-        email,
-        password,
-         role: assignedRole,
-         companyName: companyName || (assignedRole === 'company' ? 'My Tech Startup' : '')
-       });
+      const assignedCompanyName = companyName ? companyName.trim() : (assignedRole === 'company' ? 'My Tech Startup' : '');
 
-       if (assignedRole === 'candidate') {
-         await inMemoryStore.createCandidate({
-           userId: String(user._id),
-           name,
-           title: '',
-           yearsOfExperience: null,
-           skills: []
-         });
-       }
+      const user = await inMemoryStore.createUser({
+        name: trimmedName,
+        email: normalizedEmail,
+        password,
+        role: assignedRole,
+        companyName: assignedCompanyName
+      });
+
+      if (assignedRole === 'candidate') {
+        await inMemoryStore.createCandidate({
+          userId: String(user._id),
+          name: trimmedName,
+          title: '',
+          yearsOfExperience: null,
+          skills: []
+        });
+      }
 
       const token = generateToken(user);
       setAuthCookie(res, token);
@@ -187,7 +199,9 @@ export const login = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Email and password must be valid text strings.' });
     }
 
-    if (!isValidEmail(email)) {
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
       return res.status(401).json({ success: false, error: 'Invalid email or password.' });
     }
 
@@ -195,7 +209,7 @@ export const login = async (req, res, next) => {
     let user = null;
 
     if (isMongo) {
-      user = await User.findOne({ email: email.toLowerCase() });
+      user = await User.findOne({ email: normalizedEmail });
       if (!user) {
         return res.status(401).json({ success: false, error: 'Invalid email or password.' });
       }
@@ -221,7 +235,7 @@ export const login = async (req, res, next) => {
       delete userObj.password;
       return res.json({ success: true, token, user: userObj });
     } else {
-      user = await inMemoryStore.findUserByEmail(email);
+      user = await inMemoryStore.findUserByEmail(normalizedEmail);
       if (!user) {
         return res.status(401).json({ success: false, error: 'Invalid email or password.' });
       }

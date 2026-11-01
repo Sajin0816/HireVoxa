@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BriefcaseBusiness, FileText, LayoutDashboard, LogOut, Menu, UserRound, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import LogoutModal from '../components/common/LogoutModal';
 
 const links = [
   { label: 'Overview', path: '/candidate', icon: LayoutDashboard, end: true },
@@ -13,13 +14,27 @@ const links = [
 
 export default function CandidateLayout() {
   const [open, setOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const signOut = async () => {
-    await logout();
-    navigate('/login');
+  const handleOpenLogout = () => {
+    setOpen(false);
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
+    }
   };
 
   const navigation = (
@@ -57,7 +72,13 @@ export default function CandidateLayout() {
       </nav>
       <div className="border-t border-[#303030] p-3">
         <Link to="/" className="mb-1 block rounded-xl px-3 py-2.5 text-xs text-[#8E8E8E] hover:bg-[#171717] hover:text-[#F5F5F5]">Public site</Link>
-        <button onClick={signOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs text-[#EF4444] hover:bg-[#EF4444]/10"><LogOut className="h-4 w-4" /> Sign out</button>
+        <button
+          type="button"
+          onClick={handleOpenLogout}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs text-[#EF4444] hover:bg-[#EF4444]/10 cursor-pointer transition-colors"
+        >
+          <LogOut className="h-4 w-4" /> Sign out
+        </button>
       </div>
     </div>
   );
@@ -65,7 +86,12 @@ export default function CandidateLayout() {
   return (
     <div className="min-h-screen bg-[#090909] text-[#F5F5F5] md:flex">
       <aside className="hidden w-64 shrink-0 md:block">{navigation}</aside>
-      {open && <div className="fixed inset-0 z-40 md:hidden"><button className="absolute inset-0 bg-black/80" onClick={() => setOpen(false)} aria-label="Close navigation" /><aside className="relative z-10 h-full w-72">{navigation}</aside></div>}
+      {open && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <button className="absolute inset-0 bg-black/80" onClick={() => setOpen(false)} aria-label="Close navigation" />
+          <aside className="relative z-10 h-full w-72">{navigation}</aside>
+        </div>
+      )}
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#202020] bg-[#101010] px-4 py-3 md:hidden">
           <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-[#A3A3A3] hover:bg-[#202020]" aria-label="Open menu"><Menu className="h-5 w-5" /></button>
@@ -81,6 +107,14 @@ export default function CandidateLayout() {
           </div>
         </main>
       </div>
+
+      {/* Global Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleConfirmLogout}
+        isSubmitting={isLoggingOut}
+      />
     </div>
   );
 }

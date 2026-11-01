@@ -419,7 +419,7 @@ class InMemoryStore {
 
   // User methods
   async findUserByEmail(email) {
-    return this.users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+    return this.users.find(u => (u.email || '').trim().toLowerCase() === String(email || '').trim().toLowerCase()) || null;
   }
 
   async findUserById(id) {
@@ -435,7 +435,7 @@ class InMemoryStore {
     const newUser = {
       _id: userId,
       name: userData.name,
-      email: userData.email.toLowerCase(),
+      email: String(userData.email || '').trim().toLowerCase(),
       password: hashedPassword,
       role: userData.role || 'company',
       companyName: userData.companyName || 'My Startup Inc.',

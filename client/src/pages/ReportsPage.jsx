@@ -142,7 +142,7 @@ export default function ReportsPage() {
                   </div>
                   <div className="w-full h-2 bg-[#202020] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#A3A3A3] rounded-full transition-all duration-300"
+                      className="h-full bg-[#F5F5F5] rounded-full transition-all duration-300"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
