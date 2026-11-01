@@ -40,3 +40,6 @@ Thumbs.db
 # Private candidate documents (local development storage)
 server/storage/resumes/
 *.pdf
+
+# Local browser test profiles
+.chrome-qa-profile/
