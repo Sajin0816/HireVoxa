@@ -10,6 +10,7 @@ export default function InterviewsPage() {
   const [candidates, setCandidates] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showNewModal, setShowNewModal] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -27,17 +28,21 @@ export default function InterviewsPage() {
 
   const fetchInterviews = async () => {
     setLoading(true);
+    setError('');
     try {
       const [intsRes, candsRes, jobsRes] = await Promise.allSettled([
         api.getInterviews(),
         api.getCandidates(),
         api.getJobs()
       ]);
-      if (intsRes.status === 'fulfilled') setInterviews(intsRes.value?.data || []);
+      if (intsRes.status === 'rejected') {
+        throw intsRes.reason || new Error('Failed to load scheduled interviews.');
+      }
+      setInterviews(intsRes.value?.data || []);
       if (candsRes.status === 'fulfilled') setCandidates(candsRes.value?.data || []);
       if (jobsRes.status === 'fulfilled') setJobs(jobsRes.value?.data || []);
     } catch (err) {
-      console.warn('Interviews fetch fallback:', err);
+      setError(err.message || 'Unable to connect to interview service.');
     } finally {
       setLoading(false);
     }
@@ -168,6 +173,14 @@ export default function InterviewsPage() {
           {loading ? (
             <div className="py-16 text-center text-[#777777] text-sm">
               Loading scheduled interviews...
+            </div>
+          ) : error ? (
+            <div className="py-16 text-center text-sm bg-[#171717] rounded-2xl border border-[#EF4444]/20 p-8 space-y-3">
+              <AlertCircle className="w-8 h-8 text-[#EF4444] mx-auto" />
+              <p className="text-[#F87171] font-medium">{error}</p>
+              <Button variant="secondary" size="sm" onClick={fetchInterviews}>
+                Retry Fetching Interviews
+              </Button>
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-[#777777] text-sm bg-[#171717] rounded-2xl border border-[#303030]">

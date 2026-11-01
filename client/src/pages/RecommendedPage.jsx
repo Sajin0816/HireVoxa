@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, Bookmark, BookmarkCheck, Filter, Info, CheckCircle } from 'lucide-react';
+import { Sparkles, Calendar, Bookmark, BookmarkCheck, Filter, Info, CheckCircle, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import SkillIcon from '../components/common/SkillIcon';
 import Badge from '../components/common/Badge';
@@ -11,6 +11,7 @@ export default function RecommendedPage() {
   const [jobs, setJobs] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
@@ -31,14 +32,18 @@ export default function RecommendedPage() {
           api.getShortlists()
         ]);
 
-        if (recsRes.status === 'fulfilled') setRecommendations(recsRes.value?.data || []);
+        if (recsRes.status === 'rejected') {
+          throw recsRes.reason || new Error('Failed to load candidate recommendations.');
+        }
+        setRecommendations(recsRes.value?.data || []);
         if (jobsRes.status === 'fulfilled') setJobs(jobsRes.value?.data || []);
         if (shortRes.status === 'fulfilled' && shortRes.value?.data) {
           const ids = new Set(shortRes.value.data.map((s) => s.candidateId));
           setShortlistedIds(ids);
         }
+        setError('');
       } catch (err) {
-        console.warn('Failed to load recommendations:', err);
+        setError(err.message || 'Unable to calculate candidate recommendations.');
       } finally {
         setLoading(false);
       }
@@ -140,10 +145,31 @@ export default function RecommendedPage() {
         </div>
       </div>
 
+      {/* Error state banner */}
+      {error && (
+        <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-xs text-[#F87171] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => handleJobFilterChange(selectedJobId)} className="text-xs shrink-0">
+            Retry Calculation
+          </Button>
+        </div>
+      )}
+
       {/* Recommendations Grid */}
       {loading ? (
         <div className="py-16 text-center text-[#777777] text-sm">
           Calculating match algorithms against Latin American candidate profiles...
+        </div>
+      ) : error ? (
+        <div className="py-16 text-center text-sm bg-[#171717] rounded-3xl border border-[#EF4444]/20 p-8 space-y-3">
+          <AlertCircle className="w-8 h-8 text-[#EF4444] mx-auto" />
+          <p className="text-[#F87171] font-medium">{error}</p>
+          <Button variant="secondary" size="sm" onClick={() => handleJobFilterChange(selectedJobId)}>
+            Retry Match Calculation
+          </Button>
         </div>
       ) : recommendations.length === 0 ? (
         <div className="py-16 text-center text-[#777777] text-sm bg-[#171717] rounded-3xl border border-[#303030]">

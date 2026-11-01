@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Briefcase, Search, Plus, Filter, Eye, Trash2, CheckCircle2 } from 'lucide-react';
+import { Briefcase, Search, Plus, Filter, Eye, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import SkillIcon from '../components/common/SkillIcon';
 import Badge from '../components/common/Badge';
@@ -178,10 +178,28 @@ export default function JobsPage() {
       </div>
 
       {/* Requisitions Grid */}
-      {error && <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-xs text-[#F87171]">{error}</div>}
+      {error && (
+        <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-xs text-[#F87171] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <Button variant="secondary" size="sm" onClick={fetchJobs} className="text-xs shrink-0">
+            Retry
+          </Button>
+        </div>
+      )}
       {loading ? (
         <div className="py-16 text-center text-[#777777] text-sm">
           Loading active requisitions...
+        </div>
+      ) : error ? (
+        <div className="py-16 text-center text-sm bg-[#171717] rounded-3xl border border-[#EF4444]/20 p-8 space-y-3">
+          <AlertCircle className="w-8 h-8 text-[#EF4444] mx-auto" />
+          <p className="text-[#F87171] font-medium">{error}</p>
+          <Button variant="secondary" size="sm" onClick={fetchJobs}>
+            Retry Loading Requisitions
+          </Button>
         </div>
       ) : jobs.length === 0 ? (
         <div className="py-16 text-center text-[#777777] text-sm bg-[#171717] rounded-3xl border border-[#303030]">

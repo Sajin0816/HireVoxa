@@ -303,6 +303,14 @@ export default function ApplicationsPage() {
       <div className="min-h-[420px]" role="tabpanel" aria-label={`${selectedStatus} applications`}>
         {initialLoading ? (
           <div className="py-24 text-center text-sm text-[#777777]">Loading applicant records...</div>
+        ) : error ? (
+          <div className="py-20 text-center text-sm bg-[#171717] rounded-2xl border border-[#EF4444]/20 p-8 space-y-3">
+            <AlertCircle className="w-8 h-8 text-[#EF4444] mx-auto" />
+            <p className="text-[#F87171] font-medium">{error}</p>
+            <Button variant="secondary" size="sm" onClick={() => loadData(false)}>
+              Retry Loading Applications
+            </Button>
+          </div>
         ) : (
           <div className={`transition-opacity duration-200 ${loading ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
             {applications.length === 0 ? (

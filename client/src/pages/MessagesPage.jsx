@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, User, Check, Clock } from 'lucide-react';
+import { MessageSquare, Send, User, Check, Clock, AlertCircle, RefreshCw } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/common/Button';
@@ -80,7 +80,21 @@ export default function MessagesPage() {
         </p>
       </div>
 
-      {error && <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-xs text-[#F87171]">{error}</div>}
+      {error && (
+        <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-xs text-[#F87171] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={fetchMessages}
+            className="px-3 py-1 rounded-lg bg-[#202020] border border-[#303030] text-xs text-[#F5F5F5] hover:bg-[#282828] shrink-0"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
       {/* Main Messaging Interface */}
       <div className="bg-[#171717] border border-[#303030] rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[550px]">
         {/* Left Contacts Column */}
@@ -117,6 +131,17 @@ export default function MessagesPage() {
           <div className="p-6 space-y-4 overflow-y-auto max-h-[400px] flex-1">
             {loading ? (
               <div className="text-center text-xs text-[#777777] py-12">Loading messages...</div>
+            ) : error ? (
+              <div className="text-center text-xs text-[#F87171] py-12 space-y-2">
+                <p>{error}</p>
+                <button
+                  type="button"
+                  onClick={fetchMessages}
+                  className="px-3 py-1 rounded-lg bg-[#202020] border border-[#303030] text-xs text-[#F5F5F5] hover:bg-[#282828]"
+                >
+                  Retry Connection
+                </button>
+              </div>
             ) : messages.length === 0 ? (
               <div className="text-center text-xs text-[#777777] py-12">
                 No conversation history yet. Send a greeting to initiate the technical sync.

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Search, Filter, Calendar, ExternalLink, MapPin, Bookmark, BookmarkCheck, Globe, CheckCircle } from 'lucide-react';
+import { Users, Search, Filter, Calendar, ExternalLink, MapPin, Bookmark, BookmarkCheck, Globe, CheckCircle, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import SkillIcon from '../components/common/SkillIcon';
 import Badge from '../components/common/Badge';
@@ -10,6 +10,7 @@ import Modal from '../components/common/Modal';
 export default function TalentsPage() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [countryFilter, setCountryFilter] = useState('all');
   const [expFilter, setExpFilter] = useState('all');
@@ -34,12 +35,16 @@ export default function TalentsPage() {
         api.getCandidates(params),
         api.getShortlists()
       ]);
-      if (res.status === 'fulfilled') setCandidates(res.value?.data || []);
+      if (res.status === 'rejected') {
+        throw res.reason || new Error('Failed to load talent profiles.');
+      }
+      setCandidates(res.value?.data || []);
       if (shortRes.status === 'fulfilled' && shortRes.value?.data) {
         setShortlistedIds(new Set(shortRes.value.data.map((s) => s.candidateId)));
       }
+      setError('');
     } catch (err) {
-      console.warn('Failed to load candidates:', err);
+      setError(err.message || 'Unable to load Latin American engineering talent.');
     } finally {
       setLoading(false);
     }
@@ -154,10 +159,31 @@ export default function TalentsPage() {
         </div>
       </div>
 
+      {/* Error state banner */}
+      {error && (
+        <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-xs text-[#F87171] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <Button variant="secondary" size="sm" onClick={fetchCandidates} className="text-xs shrink-0">
+            Retry
+          </Button>
+        </div>
+      )}
+
       {/* Talent Cards Grid */}
       {loading ? (
         <div className="py-16 text-center text-[#777777] text-sm">
           Loading talent profiles...
+        </div>
+      ) : error ? (
+        <div className="py-16 text-center text-sm bg-[#171717] rounded-3xl border border-[#EF4444]/20 p-8 space-y-3">
+          <AlertCircle className="w-8 h-8 text-[#EF4444] mx-auto" />
+          <p className="text-[#F87171] font-medium">{error}</p>
+          <Button variant="secondary" size="sm" onClick={fetchCandidates}>
+            Retry Loading Profiles
+          </Button>
         </div>
       ) : candidates.length === 0 ? (
         <div className="py-16 text-center text-[#777777] text-sm bg-[#171717] rounded-3xl border border-[#303030]">

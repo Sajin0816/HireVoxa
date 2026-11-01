@@ -28,12 +28,23 @@ async function request(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
+  const timeoutMs = options.timeoutMs || 15000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (options.signal) {
+    options.signal.addEventListener('abort', () => controller.abort());
+  }
+
   try {
     const res = await fetch(url, {
       credentials: 'include',
       ...options,
-      headers
+      headers,
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const data = await res.json().catch(() => null);
 
@@ -47,6 +58,24 @@ async function request(endpoint, options = {}) {
 
     return data;
   } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error.name === 'AbortError') {
+      const timeoutError = new Error('Request timed out. The server took too long to respond. Please retry.');
+      timeoutError.status = 504;
+      timeoutError.isTimeout = true;
+      console.error(`[API Client] Request to ${endpoint} timed out after ${timeoutMs}ms.`);
+      throw timeoutError;
+    }
+
+    if (error.message === 'Failed to fetch') {
+      const networkError = new Error('Unable to connect to the Hirevoxa server. Please verify your connection or try again shortly.');
+      networkError.status = 0;
+      networkError.isNetworkError = true;
+      console.error(`[API Client] Request to ${endpoint} failed (network connectivity issue):`, error.message);
+      throw networkError;
+    }
+
     console.error(`[API Client] Request to ${endpoint} failed:`, error.message);
     throw error;
   }

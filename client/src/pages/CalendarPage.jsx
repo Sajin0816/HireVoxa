@@ -1,29 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, Video, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Calendar as CalendarIcon, Video, ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
 import { api } from '../services/api';
-import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 
 export default function CalendarPage() {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selectedTz, setSelectedTz] = useState('EST');
   const [weekOffset, setWeekOffset] = useState(0);
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const res = await api.getInterviews();
-        setInterviews(res?.data || []);
-      } catch (err) {
-        console.warn('Calendar load fallback:', err);
-      } finally {
-        setLoading(false);
-      }
+  const loadInterviews = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.getInterviews();
+      setInterviews(res?.data || []);
+    } catch (err) {
+      setError(err.message || 'Unable to load interview calendar events.');
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    loadInterviews();
+  }, [loadInterviews]);
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -97,6 +99,26 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      {/* Error state banner */}
+      {error && (
+        <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-xs text-[#F87171] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={RefreshCw}
+            onClick={loadInterviews}
+            disabled={loading}
+            className="text-xs self-start sm:self-auto shrink-0"
+          >
+            Retry Sync
+          </Button>
+        </div>
+      )}
+
       {/* Week Timeline Schedule View */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {daysOfWeek.map((day, idx) => {
@@ -126,9 +148,16 @@ export default function CalendarPage() {
 
                 <div className="space-y-2.5">
                   {loading ? (
-                    <div className="text-[11px] text-[#777777] py-4 text-center">Loading...</div>
+                    <div className="space-y-2 py-2">
+                      <div className="h-16 rounded-xl bg-[#202020]/70 border border-[#303030]/60 animate-pulse" />
+                      <div className="h-16 rounded-xl bg-[#202020]/40 border border-[#303030]/40 animate-pulse" />
+                    </div>
+                  ) : error ? (
+                    <div className="text-[11px] text-[#EF4444]/80 py-6 text-center">
+                      Events unavailable
+                    </div>
                   ) : dayInterviews.length === 0 ? (
-                    <div className="text-[11px] text-[#777777] py-4 text-center">
+                    <div className="text-[11px] text-[#777777] py-6 text-center">
                       No sessions scheduled
                     </div>
                   ) : (
@@ -160,7 +189,13 @@ export default function CalendarPage() {
               </div>
 
               <div className="pt-3 border-t border-[#303030] text-[10px] text-[#777777] text-center">
-                {dayInterviews.length} Event{dayInterviews.length !== 1 ? 's' : ''}
+                {loading ? (
+                  <span className="animate-pulse text-[#777777]">Syncing schedule...</span>
+                ) : error ? (
+                  <span className="text-[#EF4444]">Sync failed</span>
+                ) : (
+                  `${dayInterviews.length} Event${dayInterviews.length !== 1 ? 's' : ''}`
+                )}
               </div>
             </div>
           );
