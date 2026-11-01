@@ -14,6 +14,7 @@ import {
   Video,
   MessageSquare,
   BarChart3,
+  FileText,
   LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -38,19 +39,25 @@ export default function Sidebar({ collapsed, setCollapsed, counts = {} }) {
       name: 'Recommended',
       path: '/app/recommended',
       icon: Sparkles,
-      badge: counts.recommendations ? `${counts.recommendations}` : '9+'
+       badge: counts.recommendations ? `${counts.recommendations}` : ''
     },
     {
       name: 'Jobs',
       path: '/app/jobs',
       icon: Briefcase,
-      badge: counts.jobs ? `${counts.jobs}` : '4'
+       badge: counts.jobs ? `${counts.jobs}` : ''
+    },
+    {
+      name: 'Applications',
+      path: '/app/applications',
+      icon: FileText,
+      badge: counts.applications ? `${counts.applications}` : ''
     },
     {
       name: 'Talents',
       path: '/app/talents',
       icon: Users,
-      badge: counts.talents ? `${counts.talents}` : '9'
+       badge: counts.talents ? `${counts.talents}` : ''
     },
     {
       name: 'Payment',
@@ -113,7 +120,7 @@ export default function Sidebar({ collapsed, setCollapsed, counts = {} }) {
               to={item.path}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-150 ${
+                `flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150 ${
                   isActive
                     ? 'bg-[#202020] text-[#FFFFFF] border border-[#303030]'
                     : 'text-[#8E8E8E] hover:text-[#EDEDED] hover:bg-[#171717]'
@@ -122,12 +129,12 @@ export default function Sidebar({ collapsed, setCollapsed, counts = {} }) {
               title={collapsed ? item.name : undefined}
             >
               <div className="flex items-center gap-3">
-                <item.icon className="w-4 h-4 shrink-0" />
+                <item.icon className="w-5 h-5 shrink-0" />
                 {!collapsed && <span>{item.name}</span>}
               </div>
 
               {!collapsed && item.badge && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#171717] text-[#A3A3A3] font-bold border border-[#303030]">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#171717] text-[#A3A3A3] font-bold border border-[#303030]">
                   {item.badge}
                 </span>
               )}
@@ -138,7 +145,7 @@ export default function Sidebar({ collapsed, setCollapsed, counts = {} }) {
         {/* Workspace Hub Secondary Links */}
         {!collapsed && (
           <div className="px-5 mt-6 mb-2">
-            <span className="text-[10px] uppercase tracking-widest font-bold text-[#555555]">
+            <span className="text-xs uppercase tracking-wider font-bold text-[#666666]">
               Workspace
             </span>
           </div>
@@ -149,15 +156,15 @@ export default function Sidebar({ collapsed, setCollapsed, counts = {} }) {
               key={item.name}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
+                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? 'bg-[#202020] text-white border border-[#303030]'
-                    : 'text-[#777777] hover:text-[#D4D4D4] hover:bg-[#171717]'
+                    : 'text-[#8E8E8E] hover:text-[#EDEDED] hover:bg-[#171717]'
                 }`
               }
               title={collapsed ? item.name : undefined}
             >
-              <item.icon className="w-3.5 h-3.5 shrink-0" />
+              <item.icon className="w-4 h-4 shrink-0" />
               {!collapsed && <span>{item.name}</span>}
             </NavLink>
           ))}
@@ -168,16 +175,16 @@ export default function Sidebar({ collapsed, setCollapsed, counts = {} }) {
       <div className="p-3 border-t border-[#303030] space-y-1.5">
         <Link
           to="/"
-          className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-[#777777] hover:text-[#FFFFFF] hover:bg-[#171717] transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#8E8E8E] hover:text-[#FFFFFF] hover:bg-[#171717] transition-colors"
           title={collapsed ? "Public Landing Page" : undefined}
         >
-          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+          <ExternalLink className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Public Marketing Site</span>}
         </Link>
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-[#EF4444]/80 hover:text-[#EF4444] hover:bg-[#EF4444]/15 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#EF4444]/90 hover:text-[#EF4444] hover:bg-[#EF4444]/15 transition-colors"
           title={collapsed ? "Sign Out" : undefined}
         >
           <LogOut className="w-3.5 h-3.5 shrink-0" />

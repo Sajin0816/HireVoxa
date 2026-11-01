@@ -5,43 +5,44 @@ import SkillIcon from '../common/SkillIcon';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
 import { api } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
 
 export default function RecommendationHero({ candidateMatch, onInterviewScheduled, currentJob }) {
-  const { user } = useAuth();
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
+  const [scheduleError, setScheduleError] = useState('');
   const [interviewForm, setInterviewForm] = useState({
     proposedDate: new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16),
     timeZone: 'EST',
     notes: 'Technical architecture and system design discussion.'
   });
 
-  const candidate = candidateMatch?.candidate || {
-    _id: 'cand-001',
-    name: 'Rodrigo Feynman Silva',
-    title: 'Software Developer',
-    country: 'Brazil',
-    skills: ['Python', 'JavaScript', 'React'],
-    yearsOfExperience: 7,
-    employmentPreference: 'Full-Time',
-    compensationExpectation: '$2,000',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'
-  };
+  const candidate = candidateMatch?.candidate;
 
-  const score = candidateMatch?.score || 8.0;
-  const roleTitle = candidateMatch?.jobTitle || currentJob?.title || 'Front-End Developer';
-  const userName = user?.name || 'Richard Feynman';
+  const score = candidateMatch?.score;
+  const roleTitle = candidateMatch?.jobTitle || currentJob?.title || '';
+
+  if (!candidate) {
+    return (
+      <div className="bg-[#171717] border border-[#303030] rounded-3xl p-6 mb-6 shadow-sm">
+        <span className="text-xs text-[#A3A3A3] font-medium block">Top Candidate Match</span>
+        <h3 className="text-xl font-bold text-[#F5F5F5] tracking-tight mt-1">No live recommendation yet</h3>
+        <p className="text-xs text-[#777777] mt-2">Recommendations will appear when eligible candidate and job records are available.</p>
+      </div>
+    );
+  }
 
   const handleScheduleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setScheduleError('');
     try {
+      const targetJobId = candidateMatch?.jobId || currentJob?._id;
+      if (!targetJobId) throw new Error('A persisted job is required before scheduling an interview.');
       await api.createInterview({
         candidateId: candidate._id,
         candidateName: candidate.name,
-        jobId: candidateMatch?.jobId || currentJob?._id || 'job-001',
+        jobId: targetJobId,
         jobTitle: roleTitle,
         proposedDate: interviewForm.proposedDate,
         timeZone: interviewForm.timeZone,
@@ -50,9 +51,7 @@ export default function RecommendationHero({ candidateMatch, onInterviewSchedule
       setScheduleSuccess(true);
       if (onInterviewScheduled) onInterviewScheduled();
     } catch (err) {
-      console.warn('Interview scheduling API fallback:', err);
-      setScheduleSuccess(true);
-      if (onInterviewScheduled) onInterviewScheduled();
+      setScheduleError(err.message || 'Unable to schedule the interview.');
     } finally {
       setSubmitting(false);
     }
@@ -63,11 +62,11 @@ export default function RecommendationHero({ candidateMatch, onInterviewSchedule
       {/* Header section matching screenshot */}
       <div className="flex items-center justify-between pb-4 border-b border-[#303030] mb-5">
         <div>
-          <span className="text-xs text-[#777777] font-medium block">
-            Hey {userName}, here's your new
+          <span className="text-xs text-[#A3A3A3] font-medium block">
+            Top Candidate Match
           </span>
           <h3 className="text-xl font-bold text-[#F5F5F5] tracking-tight">
-            Recommendation
+            Featured Recommendation
           </h3>
         </div>
         <Link
@@ -83,11 +82,17 @@ export default function RecommendationHero({ candidateMatch, onInterviewSchedule
         {/* Top Info Row: Candidate Avatar, Name, Title, and Right Badges */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#303030]">
           <div className="flex items-center gap-3.5">
-            <img
-              src={candidate.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
-              alt={candidate.name}
-              className="w-11 h-11 rounded-full object-cover border border-[#303030]"
-            />
+            {candidate.avatarUrl ? (
+              <img
+                src={candidate.avatarUrl}
+                alt={candidate.name}
+                className="w-11 h-11 rounded-full object-cover border border-[#303030]"
+              />
+            ) : (
+              <div className="w-11 h-11 rounded-full bg-[#262626] border border-[#303030] flex items-center justify-center text-xs font-bold text-[#F5F5F5] select-none">
+                {candidate.name ? candidate.name.split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'CE'}
+              </div>
+            )}
             <div>
               <h4 className="text-sm font-bold text-[#F5F5F5]">
                 {candidate.name.length > 20 ? `${candidate.name.slice(0, 18)}...` : candidate.name}
@@ -165,6 +170,7 @@ export default function RecommendationHero({ candidateMatch, onInterviewSchedule
           </div>
         ) : (
           <form onSubmit={handleScheduleSubmit} className="space-y-4">
+            {scheduleError && <p className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-3 text-xs text-[#F87171]">{scheduleError}</p>}
             <div>
               <label className="block text-xs font-medium text-[#A3A3A3] mb-1">Target Role</label>
               <input

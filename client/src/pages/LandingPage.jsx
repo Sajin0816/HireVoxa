@@ -101,6 +101,7 @@ export default function LandingPage() {
             <a href="#workflow" className="hover:text-white transition-colors">How It Works</a>
             <a href="#roles" className="hover:text-white transition-colors">Roles</a>
             <a href="#matching" className="hover:text-white transition-colors">Matching</a>
+            <Link to="/pricing" className="hover:text-white transition-colors text-[#F59E0B]">Pricing</Link>
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
           </div>
 

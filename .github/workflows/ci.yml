@@ -1,0 +1,61 @@
+name: Hirevoxa CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  audit-and-test:
+    name: Security Audit, Test Suite & Production Build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [ 20.x, 22.x ]
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Install client dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Server security dependency audit
+        working-directory: ./server
+        run: npm audit --audit-level=high
+
+      - name: Client security dependency audit
+        working-directory: ./client
+        run: npm audit --audit-level=high
+
+      - name: Client static analysis linting
+        working-directory: ./client
+        run: npm run lint
+
+      - name: Run backend automated test suite (171 tests across 19 suites)
+        working-directory: ./server
+        env:
+          NODE_ENV: test
+          ALLOW_IN_MEMORY_DEMO: 'true'
+          JWT_SECRET: ci_pipeline_jwt_secret_test_2026
+        run: npm test
+
+      - name: Compile client production bundle
+        working-directory: ./client
+        run: npm run build

@@ -30,7 +30,7 @@ export default function DashboardPage() {
       setInterviews(intsData?.data || []);
       setRecommendations(recsData?.data || []);
     } catch (err) {
-      console.warn('Dashboard data fetch fallback:', err);
+      setError(err.message || 'Unable to load live workspace data.');
     } finally {
       setLoading(false);
     }

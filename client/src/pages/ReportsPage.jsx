@@ -6,6 +6,7 @@ import Badge from '../components/common/Badge';
 export default function ReportsPage() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -14,7 +15,7 @@ export default function ReportsPage() {
         const res = await api.getReportsMetrics();
         setMetrics(res?.data || null);
       } catch (err) {
-        console.warn('Metrics load fallback:', err);
+        setError(err.message || 'Unable to load live metrics.');
       } finally {
         setLoading(false);
       }
@@ -30,27 +31,16 @@ export default function ReportsPage() {
     );
   }
 
-  const data = metrics || {
-    totalCandidates: 6,
-    totalJobs: 4,
-    totalInterviews: 2,
-    countryDistribution: [
-      { country: 'Brazil', count: 2 },
-      { country: 'Argentina', count: 1 },
-      { country: 'Colombia', count: 1 },
-      { country: 'Mexico', count: 1 },
-      { country: 'Chile', count: 1 }
-    ],
-    topSkills: [
-      { name: 'React', count: 4 },
-      { name: 'JavaScript', count: 4 },
-      { name: 'Node.js', count: 3 },
-      { name: 'Python', count: 2 },
-      { name: 'TypeScript', count: 2 }
-    ],
-    jobStatuses: { Open: 2, Trial: 1, Fulfilled: 1, 'On Hold': 0, Draft: 0 },
-    interviewStatuses: { Pending: 1, Confirmed: 1, Completed: 0, Cancelled: 0 }
-  };
+  if (error || !metrics) {
+    return (
+      <div className="rounded-2xl border border-dashed border-[#404040] p-12 text-center">
+        <p className="text-sm font-semibold text-[#F5F5F5]">{error || 'No analytics data yet.'}</p>
+        <p className="mt-2 text-xs text-[#777777]">Metrics will appear when authorized persisted records exist.</p>
+      </div>
+    );
+  }
+
+  const data = metrics;
 
   return (
     <div className="space-y-6">

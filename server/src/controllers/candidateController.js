@@ -1,6 +1,7 @@
 import { getDbMode } from '../config/db.js';
 import { Candidate } from '../models/Candidate.js';
 import { inMemoryStore } from '../services/inMemoryStore.js';
+import { safeRegex } from '../utils/securityUtils.js';
 
 export async function getAllCandidates(req, res, next) {
   try {
@@ -14,25 +15,32 @@ export async function getAllCandidates(req, res, next) {
         experience,
         availability,
         country,
-        employmentPreference
+        employmentPreference,
+        onlyPublic: !req.user || req.user.role !== 'candidate'
       });
+      const visibleCandidates = req.user?.role === 'candidate'
+        ? candidates.filter(candidate => candidate.userId === req.user.id)
+        : candidates;
       return res.json({
         success: true,
-        count: candidates.length,
+        count: visibleCandidates.length,
         mode,
-        data: candidates
+        data: visibleCandidates.map(({ userId, consentStatus, ...candidate }) => candidate)
       });
     }
 
     // MongoDB mode
-    const query = { profileVisibility: { $ne: 'Private' } };
+    const query = req.user?.role === 'candidate' ? { userId: req.user.id } : { profileVisibility: 'Active' };
 
     if (search) {
-      const reg = new RegExp(search, 'i');
-      query.$or = [{ name: reg }, { title: reg }, { skills: reg }, { country: reg }];
+      const reg = safeRegex(search);
+      if (reg) {
+        query.$or = [{ name: reg }, { title: reg }, { skills: reg }, { country: reg }];
+      }
     }
     if (skill) {
-      query.skills = new RegExp(skill, 'i');
+      const reg = safeRegex(skill);
+      if (reg) query.skills = reg;
     }
     if (experience) {
       const exp = parseInt(experience, 10);
@@ -42,7 +50,8 @@ export async function getAllCandidates(req, res, next) {
       query.availability = availability;
     }
     if (country) {
-      query.country = new RegExp(country, 'i');
+      const reg = safeRegex(country);
+      if (reg) query.country = reg;
     }
     if (employmentPreference) {
       query.employmentPreference = employmentPreference;
@@ -54,7 +63,12 @@ export async function getAllCandidates(req, res, next) {
       success: true,
       count: candidates.length,
       mode,
-      data: candidates
+      data: candidates.map(candidate => {
+        const value = candidate.toObject();
+        delete value.userId;
+        delete value.consentStatus;
+        return value;
+      })
     });
   } catch (error) {
     next(error);
@@ -80,10 +94,21 @@ export async function getCandidateById(req, res, next) {
       });
     }
 
+    if (req.user?.role === 'candidate' && candidate.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: candidates can only view their own private profile.' });
+    }
+    if ((!req.user || ['company', 'candidate'].includes(req.user.role)) && candidate.profileVisibility === 'Private' && candidate.userId !== req.user?.id) {
+      return res.status(404).json({ success: false, error: 'Candidate profile not found.' });
+    }
+
+    const value = candidate.toObject ? candidate.toObject() : { ...candidate };
+    delete value.userId;
+    delete value.consentStatus;
+
     res.json({
       success: true,
       mode,
-      data: candidate
+      data: value
     });
   } catch (error) {
     next(error);

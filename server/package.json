@@ -8,10 +8,13 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/seed/seed.js",
-    "test": "node --test tests/*.test.js"
+    "db:check": "node src/scripts/verifyConnection.js",
+    "bootstrap:admin": "node src/scripts/bootstrapAdmin.js",
+    "test": "node --import ./tests/setup.js --test tests/api.test.js tests/auth.test.js tests/security.test.js tests/phase2a_acceptance.test.js tests/phase2a_e2e_qa.test.js tests/tenant_isolation.test.js tests/session_security.test.js tests/persistence.test.js tests/phase3_candidate_portal.test.js tests/phase3_e2e_scenario.test.js tests/phase4_hiring_workflow.test.js tests/phase4_5_admin_operations.test.js tests/phase5_monetization.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -19,7 +22,9 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^8.10.1"
+    "mongoose": "^8.10.1",
+    "multer": "^2.5.0",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "supertest": "^7.0.0"

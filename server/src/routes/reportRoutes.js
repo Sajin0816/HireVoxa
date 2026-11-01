@@ -4,24 +4,26 @@ import { Candidate } from '../models/Candidate.js';
 import { Job } from '../models/Job.js';
 import { Interview } from '../models/Interview.js';
 import { getDbMode } from '../config/db.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/metrics', async (req, res, next) => {
+router.get('/metrics', protect, authorize('company', 'admin'), async (req, res, next) => {
   try {
     const isMongo = getDbMode() === 'mongodb';
+    const companyId = req.user.companyId || req.user.id;
     let candidates = [];
     let jobs = [];
     let interviews = [];
 
     if (isMongo) {
-      candidates = await Candidate.find({});
-      jobs = await Job.find({});
-      interviews = await Interview.find({});
+      candidates = await Candidate.find({ profileVisibility: 'Active' });
+      jobs = await Job.find({ companyId });
+      interviews = await Interview.find({ companyId });
     } else {
-      candidates = await inMemoryStore.findCandidates({});
-      jobs = await inMemoryStore.findJobs({});
-      interviews = await inMemoryStore.findInterviews({});
+      candidates = await inMemoryStore.findCandidates({ onlyPublic: true });
+      jobs = await inMemoryStore.findJobs({ companyId });
+      interviews = await inMemoryStore.findInterviews({ companyId });
     }
 
     // Compute distribution by country
@@ -45,7 +47,7 @@ router.get('/metrics', async (req, res, next) => {
       .slice(0, 6)
       .map(([name, count]) => ({ name, count }));
 
-    // Job status breakdown
+    // Job status breakdown (tenant-scoped)
     const jobStatuses = {
       Open: jobs.filter((j) => j.status === 'Open').length,
       Trial: jobs.filter((j) => j.status === 'Trial').length,
@@ -54,7 +56,7 @@ router.get('/metrics', async (req, res, next) => {
       Draft: jobs.filter((j) => j.status === 'Draft').length
     };
 
-    // Interview status breakdown
+    // Interview status breakdown (tenant-scoped)
     const interviewStatuses = {
       Pending: interviews.filter((i) => i.status === 'Pending').length,
       Confirmed: interviews.filter((i) => i.status === 'Confirmed').length,

@@ -6,10 +6,10 @@ import { useAuth } from '../context/AuthContext';
 export default function SettingsPage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState({
-    name: user?.name || 'Richard Feynman',
-    email: user?.email || 'richardfeynman@gmail.com',
-    company: user?.companyName || 'Acme Technologies',
-    role: user?.role === 'candidate' ? 'Software Engineer' : 'Engineering Director'
+    name: user?.name || '',
+    email: user?.email || '',
+    company: user?.companyName || '',
+    role: user?.role || ''
   });
 
   const [notifications, setNotifications] = useState({
@@ -29,75 +29,75 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="pb-4 border-b border-[#303030]">
-        <div className="flex items-center gap-2">
-          <Settings className="w-5 h-5 text-[#F5F5F5]" />
+      <div className="pb-5 border-b border-[#303030]">
+        <div className="flex items-center gap-2.5">
+          <Settings className="w-6 h-6 text-[#F5F5F5]" />
           <h1 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">Platform Settings</h1>
         </div>
-        <p className="text-xs text-[#777777] mt-1">
+        <p className="text-sm text-[#A3A3A3] mt-1.5">
           Configure recruitment workspace preferences, team details, and notification alerts.
         </p>
       </div>
 
       {savedNotice && (
-        <div className="p-4 bg-[#10B981]/15 border border-[#10B981]/30 rounded-2xl flex items-center gap-2 text-xs text-[#10B981]">
-          <CheckCircle2 className="w-4 h-4" />
+        <div className="p-4 bg-[#10B981]/15 border border-[#10B981]/30 rounded-2xl flex items-center gap-2.5 text-sm text-[#10B981]">
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
           <span>Workspace preferences saved successfully.</span>
         </div>
       )}
 
       {/* Profile Form */}
-      <div className="bg-[#171717] border border-[#303030] rounded-2xl p-6">
-        <h3 className="text-base font-bold text-[#F5F5F5] mb-4 flex items-center gap-2">
-          <User className="w-4 h-4 text-[#F5F5F5]" />
+      <div className="bg-[#171717] border border-[#303030] rounded-2xl p-7 shadow-lg">
+        <h3 className="text-lg font-bold text-[#F5F5F5] mb-5 flex items-center gap-2.5">
+          <User className="w-5 h-5 text-[#F5F5F5]" />
           <span>Account Profile</span>
         </h3>
 
-        <form onSubmit={handleSave} className="space-y-4 max-w-xl text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleSave} className="space-y-5 max-w-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="block text-[#A3A3A3] mb-1 font-medium">Display Name</label>
+              <label className="block text-sm font-medium text-[#D4D4D4] mb-2">Display Name</label>
               <input
                 type="text"
                 value={profile.name}
                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#505050]"
+                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-4 py-2.5 text-sm text-[#F5F5F5] focus:outline-none focus:border-[#606060] transition-colors"
               />
             </div>
             <div>
-              <label className="block text-[#A3A3A3] mb-1 font-medium">Work Email</label>
+              <label className="block text-sm font-medium text-[#D4D4D4] mb-2">Work Email</label>
               <input
                 type="email"
                 value={profile.email}
                 onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#505050]"
+                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-4 py-2.5 text-sm text-[#F5F5F5] focus:outline-none focus:border-[#606060] transition-colors"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="block text-[#A3A3A3] mb-1 font-medium">Company Name</label>
+              <label className="block text-sm font-medium text-[#D4D4D4] mb-2">Company Name</label>
               <input
                 type="text"
                 value={profile.company}
                 onChange={(e) => setProfile({ ...profile, company: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#505050]"
+                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-4 py-2.5 text-sm text-[#F5F5F5] focus:outline-none focus:border-[#606060] transition-colors"
               />
             </div>
             <div>
-              <label className="block text-[#A3A3A3] mb-1 font-medium">Role / Department</label>
+              <label className="block text-sm font-medium text-[#D4D4D4] mb-2">Role / Department</label>
               <input
                 type="text"
                 value={profile.role}
                 onChange={(e) => setProfile({ ...profile, role: e.target.value })}
-                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#505050]"
+                className="w-full bg-[#202020] border border-[#303030] rounded-xl px-4 py-2.5 text-sm text-[#F5F5F5] focus:outline-none focus:border-[#606060] transition-colors"
               />
             </div>
           </div>
 
           <div className="pt-2">
-            <Button type="submit" variant="primary" size="sm">
+            <Button type="submit" variant="primary" size="md" className="font-semibold px-6 py-2.5 text-sm">
               Save Account Preferences
             </Button>
           </div>
@@ -105,17 +105,17 @@ export default function SettingsPage() {
       </div>
 
       {/* Notifications */}
-      <div className="bg-[#171717] border border-[#303030] rounded-2xl p-6">
-        <h3 className="text-base font-bold text-[#F5F5F5] mb-4 flex items-center gap-2">
-          <Bell className="w-4 h-4 text-[#F5F5F5]" />
+      <div className="bg-[#171717] border border-[#303030] rounded-2xl p-7 shadow-lg">
+        <h3 className="text-lg font-bold text-[#F5F5F5] mb-5 flex items-center gap-2.5">
+          <Bell className="w-5 h-5 text-[#F5F5F5]" />
           <span>Notification Alerts</span>
         </h3>
 
-        <div className="space-y-3 max-w-xl text-xs">
-          <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#202020] border border-[#303030] hover:border-[#404040] cursor-pointer transition-colors">
+        <div className="space-y-3.5 max-w-2xl">
+          <label className="flex items-center justify-between p-4 rounded-xl bg-[#202020] border border-[#303030] hover:border-[#404040] cursor-pointer transition-colors">
             <div>
-              <p className="font-semibold text-[#F5F5F5]">New Candidate Recommendations</p>
-              <p className="text-[#777777] text-[11px]">Instant alert when a candidate matches above 8.0</p>
+              <p className="font-semibold text-sm text-[#F5F5F5]">New Candidate Recommendations</p>
+              <p className="text-[#A3A3A3] text-xs mt-0.5">Instant alert when a candidate matches above 8.0</p>
             </div>
             <input
               type="checkbox"
@@ -125,10 +125,10 @@ export default function SettingsPage() {
             />
           </label>
 
-          <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#202020] border border-[#303030] hover:border-[#404040] cursor-pointer transition-colors">
+          <label className="flex items-center justify-between p-4 rounded-xl bg-[#202020] border border-[#303030] hover:border-[#404040] cursor-pointer transition-colors">
             <div>
-              <p className="font-semibold text-[#F5F5F5]">Interview Confirmations & Updates</p>
-              <p className="text-[#777777] text-[11px]">Calendar dispatch and rescheduling alerts</p>
+              <p className="font-semibold text-sm text-[#F5F5F5]">Interview Confirmations & Updates</p>
+              <p className="text-[#A3A3A3] text-xs mt-0.5">Calendar dispatch and rescheduling alerts</p>
             </div>
             <input
               type="checkbox"

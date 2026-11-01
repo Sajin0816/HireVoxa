@@ -9,11 +9,7 @@ export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user } = useAuth();
-  const [counts, setCounts] = useState({
-    jobs: 4,
-    talents: 9,
-    recommendations: 9
-  });
+  const [counts, setCounts] = useState({ jobs: 0, talents: 0, recommendations: 0 });
   const location = useLocation();
 
   useEffect(() => {
@@ -29,7 +25,7 @@ export default function DashboardLayout() {
           api.getRecommendations()
         ]);
 
-        const newCounts = { ...counts };
+        const newCounts = { jobs: 0, talents: 0, recommendations: 0 };
         if (jobsRes.status === 'fulfilled' && jobsRes.value?.data) {
           newCounts.jobs = jobsRes.value.data.length;
         }
@@ -109,15 +105,15 @@ export default function DashboardLayout() {
         </header>
 
         {/* Global Minimalist Workspace Header Info */}
-        <div className="bg-[#101010] border-b border-[#202020] px-6 py-2 flex items-center justify-between text-[11px] text-[#777777]">
+        <div className="bg-[#101010] border-b border-[#202020] px-6 py-2.5 flex items-center justify-between text-xs text-[#8E8E8E]">
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+            <span className="w-2 h-2 rounded-full bg-[#10B981]" />
             <span>
-              Connected to <strong>Hirevoxa Latin America Engineering Network</strong>
+              Connected to <strong className="text-[#D4D4D4]">Hirevoxa Latin America Engineering Network</strong>
             </span>
           </div>
-          <span className="hidden sm:inline-block font-mono text-[10px]">
-            Mode: In-Memory Persistent Store • Role: {user?.role || 'Company'}
+          <span className="hidden sm:inline-block font-mono text-xs text-[#777777]">
+            Authenticated workspace • Role: {user?.role || 'Unknown'}
           </span>
         </div>
 

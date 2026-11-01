@@ -47,7 +47,7 @@ Below are verified screenshots captured directly from the live application runni
 ### 2.1 Public Marketing Landing Page (Desktop)
 The homepage features the official Hirevoxa brand logo with tagline, high-contrast dark aesthetic (`#090909`), and an interactive WebGL Three.js titanium polyhedron canvas with orbiting talent nodes.
 
-![Public Marketing Landing Page Desktop](screenshots/landing_page_desktop.png)
+![Public Marketing Landing Page Desktop](../../../screenshots/landing_page_desktop.png)
 
 - **Components:** `LandingPage.jsx`, `Hero3DCanvas.jsx`
 - **Aesthetic:** Titanium dark mode, modern typography (Inter), 60 FPS WebGL rendering.
@@ -58,7 +58,7 @@ The homepage features the official Hirevoxa brand logo with tagline, high-contra
 ### 2.2 Mobile Viewport Responsiveness
 On narrow viewports (375px mobile), the navigation header automatically adapts by rendering the compact standalone metallic "H" symbol, preserving horizontal spacing and preventing button wrapping.
 
-![Public Marketing Landing Page Mobile](screenshots/landing_page_mobile.png)
+![Public Marketing Landing Page Mobile](../../../screenshots/landing_page_mobile.png)
 
 - **Components:** `LandingPage.jsx` (`block sm:hidden` icon toggle)
 - **QA Notes:** Fully verified across iOS and Android aspect ratios; zero horizontal overflow.
@@ -68,7 +68,7 @@ On narrow viewports (375px mobile), the navigation header automatically adapts b
 ### 2.3 Employer Recruitment Dashboard Overview
 The main recruiter workspace features the hiring lead profile (`Richard Feynman`), dedicated Account Executive card (`Esther Howard`), live candidate match hero panel, and job requisitions table.
 
-![Employer Recruitment Dashboard Overview](screenshots/employer_dashboard.png)
+![Employer Recruitment Dashboard Overview](../../../screenshots/employer_dashboard.png)
 
 - **Components:** `DashboardLayout.jsx`, `HeaderProfile.jsx`, `RecommendationHero.jsx`, `JobsTable.jsx`
 - **QA Notes:** "Schedule Call" with Esther Howard is a front-end simulation (no backend calendar/webhook integration).
@@ -78,7 +78,7 @@ The main recruiter workspace features the hiring lead profile (`Richard Feynman`
 ### 2.4 Job Requisitions Management
 Recruiters can inspect open requisitions, view required skill tags (React, Node, Python), and launch the new job intake modal.
 
-![Job Requisitions Management](screenshots/job_requisitions.png)
+![Job Requisitions Management](../../../screenshots/job_requisitions.png)
 
 - **Components:** `JobsPage.jsx`, `jobController.js`
 - **QA Notes:** Job creation works and persists to memory/DB. **Critical Bug:** Clicking the trash icon to delete a job returns HTTP `404 Not Found` because `DELETE /api/jobs/:id` is missing in backend routes.
@@ -88,7 +88,7 @@ Recruiters can inspect open requisitions, view required skill tags (React, Node,
 ### 2.5 Deterministic Candidate Matching Engine
 Candidates are scored on a normalized 10.0 scale based on 4 deterministic rules (Technical Skill Overlap 50%, Experience Fit 25%, Availability Timing 15%, Employment Preference 10%).
 
-![Deterministic Candidate Matching Engine](screenshots/candidate_matching.png)
+![Deterministic Candidate Matching Engine](../../../screenshots/candidate_matching.png)
 
 - **Components:** `RecommendedPage.jsx`, `matchingService.js`, `matchController.js`
 - **QA Notes:** Algorithm verified with 13 automated backend tests. Explainable fit score modal displays accurate breakdowns.
@@ -98,7 +98,7 @@ Candidates are scored on a normalized 10.0 scale based on 4 deterministic rules 
 ### 2.6 Latin American Engineering Talent Directory
 A searchable and filterable directory of verified software engineers across Brazil, Argentina, Colombia, Mexico, and Chile.
 
-![Latin American Engineering Talent Directory](screenshots/talent_directory.png)
+![Latin American Engineering Talent Directory](../../../screenshots/talent_directory.png)
 
 - **Components:** `TalentsPage.jsx`, `candidateController.js`
 - **QA Notes:** Filtering by country, experience level, availability, and search term works seamlessly. Candidate profiles currently lack CV download and external link verification.
@@ -108,7 +108,7 @@ A searchable and filterable directory of verified software engineers across Braz
 ### 2.7 Technical Interviews Coordination
 A dedicated dashboard for tracking candidate technical screens and coordinating timezone alignments.
 
-![Technical Interviews Coordination](screenshots/technical_interviews.png)
+![Technical Interviews Coordination](../../../screenshots/technical_interviews.png)
 
 - **Components:** `InterviewsPage.jsx`, `interviewController.js`
 - **QA Notes:** Interview creation works. **Critical Bug:** Clicking "Confirm" or "Complete" fails silently because `PATCH /api/interviews/:id` is missing in backend routes.
@@ -118,7 +118,7 @@ A dedicated dashboard for tracking candidate technical screens and coordinating 
 ### 2.8 Direct Candidate Messaging
 An integrated chat interface enabling hiring teams to communicate directly with Latin American candidates.
 
-![Direct Candidate Messaging](screenshots/direct_messaging.png)
+![Direct Candidate Messaging](../../../screenshots/direct_messaging.png)
 
 - **Components:** `MessagesPage.jsx`, `messageRoutes.js`
 - **QA Notes:** Message sending works via REST. Chat is currently locked to a hardcoded conversation thread (`conv-cand-001`) with no WebSocket support.
@@ -128,7 +128,7 @@ An integrated chat interface enabling hiring teams to communicate directly with 
 ### 2.9 Hiring Analytics & Intelligence
 Aggregated metrics detailing Latin American talent distribution by country, top technology competencies, and requisition pipeline health.
 
-![Hiring Analytics & Intelligence](screenshots/analytics_intelligence.png)
+![Hiring Analytics & Intelligence](../../../screenshots/analytics_intelligence.png)
 
 - **Components:** `ReportsPage.jsx`, `reportRoutes.js`
 - **QA Notes:** Data is computed dynamically via `GET /api/reports/metrics` from active database records.
@@ -138,7 +138,7 @@ Aggregated metrics detailing Latin American talent distribution by country, top 
 ### 2.10 Authentication & Demo Login
 Branded login portal featuring fast single-click demo account switching between Employer (`Richard Feynman`) and Candidate (`Rodrigo Silva`).
 
-![Authentication & Sign-In](screenshots/login_authentication.png)
+![Authentication & Sign-In](../../../screenshots/login_authentication.png)
 
 - **Components:** `LoginPage.jsx`, `authController.js`
 - **QA Notes:** JWT is stored in `localStorage`. Logging in as a candidate incorrectly redirects to the employer workspace.
@@ -148,7 +148,7 @@ Branded login portal featuring fast single-click demo account switching between 
 ### 2.11 Landing Page Footer & Legal Disclaimer
 Clean footer featuring the official Hirevoxa logo, navigation links, and transparent compliance disclaimers.
 
-![Landing Page Footer](screenshots/landing_page_footer.png)
+![Landing Page Footer](../../../screenshots/landing_page_footer.png)
 
 - **Components:** `LandingPage.jsx`
 

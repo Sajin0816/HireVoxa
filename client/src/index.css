@@ -22,13 +22,29 @@
     --status-error: #EF4444;
   }
 
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     background-color: #090909;
     color: #F5F5F5;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 0.9375rem;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
+  }
+
+  /* Micro-font upscaling for comfortable readability */
+  .text-\[10px\] {
+    font-size: 0.8125rem !important;
+    line-height: 1.125rem !important;
+  }
+  .text-\[11px\] {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
   }
 
   /* Custom minimal dark scrollbar */
@@ -45,6 +61,28 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #303030;
+  }
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-tab-fade {
+  animation: tabFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-tab-fade {
+    animation: none !important;
+    transform: none !important;
   }
 }
 

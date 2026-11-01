@@ -2,19 +2,23 @@ import express from 'express';
 import { inMemoryStore } from '../services/inMemoryStore.js';
 import { Shortlist } from '../models/Shortlist.js';
 import { getDbMode } from '../config/db.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // GET /api/shortlists
-router.get('/', async (req, res, next) => {
+router.get('/', protect, async (req, res, next) => {
   try {
-    const userId = req.query.userId || 'usr-company-001';
+    const userId = req.user.id;
+    const companyId = req.user.companyId || req.user.id;
     const isMongo = getDbMode() === 'mongodb';
     if (isMongo) {
-      const items = await Shortlist.find({ userId });
+      const items = await Shortlist.find({
+        $or: [{ companyId }, { userId }]
+      });
       return res.json({ success: true, data: items });
     } else {
-      const items = await inMemoryStore.findShortlists(userId);
+      const items = await inMemoryStore.findShortlists(userId, companyId);
       return res.json({ success: true, data: items });
     }
   } catch (err) {
@@ -23,25 +27,32 @@ router.get('/', async (req, res, next) => {
 });
 
 // POST /api/shortlists/toggle
-router.post('/toggle', async (req, res, next) => {
+router.post('/toggle', protect, async (req, res, next) => {
   try {
-    const { userId = 'usr-company-001', candidateId, jobId, notes } = req.body;
+    const userId = req.user.id;
+    const companyId = req.user.companyId || req.user.id;
+    const { candidateId, jobId, notes } = req.body;
     if (!candidateId) {
       return res.status(400).json({ success: false, error: 'candidateId is required' });
     }
 
     const isMongo = getDbMode() === 'mongodb';
     if (isMongo) {
-      const existing = await Shortlist.findOne({ userId, candidateId });
+      const existing = await Shortlist.findOne({
+        $or: [
+          { companyId, candidateId },
+          { userId, candidateId }
+        ]
+      });
       if (existing) {
         await Shortlist.deleteOne({ _id: existing._id });
         return res.json({ success: true, shortlisted: false });
       } else {
-        const item = await Shortlist.create({ userId, candidateId, jobId, notes });
+        const item = await Shortlist.create({ companyId, userId, candidateId, jobId, notes });
         return res.json({ success: true, shortlisted: true, item });
       }
     } else {
-      const result = await inMemoryStore.toggleShortlist(userId, candidateId, jobId, notes);
+      const result = await inMemoryStore.toggleShortlist(userId, candidateId, jobId, notes, companyId);
       return res.json({ success: true, ...result });
     }
   } catch (err) {

@@ -9,6 +9,7 @@ import Modal from '../components/common/Modal';
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -32,6 +33,7 @@ export default function JobsPage() {
 
   const fetchJobs = async () => {
     setLoading(true);
+    setError('');
     try {
       const params = {};
       if (search) params.search = search;
@@ -40,7 +42,7 @@ export default function JobsPage() {
       const res = await api.getJobs(params);
       setJobs(res?.data || []);
     } catch (err) {
-      console.warn('Failed to fetch jobs:', err);
+      setError(err.message || 'Unable to load persisted jobs.');
     } finally {
       setLoading(false);
     }
@@ -176,6 +178,7 @@ export default function JobsPage() {
       </div>
 
       {/* Requisitions Grid */}
+      {error && <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-xs text-[#F87171]">{error}</div>}
       {loading ? (
         <div className="py-16 text-center text-[#777777] text-sm">
           Loading active requisitions...
@@ -201,13 +204,13 @@ export default function JobsPage() {
                 </div>
 
                 <p className="text-xs text-[#A3A3A3] mt-3 line-clamp-2 leading-relaxed">
-                  {job.description || 'Engineering role syncing directly with US technical team.'}
+                   {job.description || 'No role description provided.'}
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-xs">
                   <Badge variant="default">{job.minimumExperience}+ yrs exp req</Badge>
                   <Badge variant="default">{job.employmentType || 'Full-time'}</Badge>
-                  <Badge variant="trial">{job.budgetRange || '$4,500/mo'}</Badge>
+                   <Badge variant="trial">{job.budgetRange || 'Budget not provided'}</Badge>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-[#303030]">
@@ -224,7 +227,7 @@ export default function JobsPage() {
 
               <div className="mt-5 pt-3 border-t border-[#303030] flex items-center justify-between">
                 <span className="text-[11px] text-[#777777] font-mono">
-                  {job.timeZoneOverlapRequirements || 'EST +/- 2 hrs'}
+                   {job.timeZoneOverlapRequirements || 'Timezone details not provided'}
                 </span>
                 <Button
                   variant="secondary"

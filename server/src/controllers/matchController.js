@@ -8,13 +8,14 @@ export async function getJobMatches(req, res, next) {
   try {
     const { jobId } = req.params;
     const mode = getDbMode();
+    const companyId = req.user?.companyId || req.user?.id;
 
     let job = null;
     let candidates = [];
 
     if (mode === 'in-memory-demo') {
       job = await inMemoryStore.findJobById(jobId);
-      candidates = await inMemoryStore.findCandidates({});
+      candidates = await inMemoryStore.findCandidates({ onlyPublic: true });
     } else {
       job = await Job.findById(jobId);
       candidates = await Candidate.find({ profileVisibility: 'Active' });
@@ -25,6 +26,9 @@ export async function getJobMatches(req, res, next) {
         success: false,
         error: `Job not found with id: ${jobId}`
       });
+    }
+    if (req.user?.role === 'company' && job.companyId !== companyId) {
+      return res.status(403).json({ success: false, error: 'Access denied: job belongs to another organization.' });
     }
 
     const matches = rankCandidatesForJob(candidates, job);
@@ -49,30 +53,25 @@ export async function getJobMatches(req, res, next) {
 export async function getTopRecommendations(req, res, next) {
   try {
     const mode = getDbMode();
+    const companyId = req.user?.companyId || req.user?.id;
     let jobs = [];
     let candidates = [];
 
     if (mode === 'in-memory-demo') {
-      jobs = await inMemoryStore.findJobs({ status: 'Open' });
-      candidates = await inMemoryStore.findCandidates({});
+      jobs = await inMemoryStore.findJobs({ status: 'Open', companyId });
+      candidates = await inMemoryStore.findCandidates({ onlyPublic: true });
     } else {
-      jobs = await Job.find({ status: 'Open' });
+      jobs = await Job.find({ status: 'Open', companyId });
       candidates = await Candidate.find({ profileVisibility: 'Active' });
     }
 
     if (jobs.length === 0) {
-      // If no open jobs, return candidates with general profile information
       return res.json({
         success: true,
-        count: candidates.length,
+        count: 0,
         mode,
-        data: candidates.map(c => ({
-          candidate: c,
-          score: 8.5,
-          matchedSkills: c.skills.slice(0, 3),
-          missingSkills: [],
-          jobTitle: 'Open Engineering Opportunity'
-        }))
+        data: [],
+        message: 'Recommendations require at least one published job.'
       });
     }
 

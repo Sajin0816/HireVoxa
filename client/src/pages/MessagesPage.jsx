@@ -7,24 +7,31 @@ import Button from '../components/common/Button';
 export default function MessagesPage() {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const activeContact = {
-    name: 'Rodrigo Feynman Silva',
-    title: 'Senior Frontend & React Engineer • São Paulo',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-    id: 'cand-001'
-  };
+  const [activeContact, setActiveContact] = useState(null);
 
   const fetchMessages = async () => {
     try {
       const res = await api.getMessages();
-      setMessages(res?.data || []);
+      const nextMessages = res?.data || [];
+      setMessages(nextMessages);
+      if (nextMessages.length > 0) {
+        const first = nextMessages[0];
+        const isSender = first.senderId === user?._id;
+        setActiveContact({
+          id: isSender ? first.recipientId : first.senderId,
+          name: isSender ? first.recipientName : first.senderName,
+          conversationId: first.conversationId
+        });
+      }
+      setError('');
     } catch (err) {
-      console.warn('Messages fetch fallback:', err);
+      setError(err.message || 'Unable to load authorized conversations.');
     } finally {
       setLoading(false);
     }
@@ -44,11 +51,9 @@ export default function MessagesPage() {
 
     setSending(true);
     try {
+      if (!activeContact) throw new Error('Select a persisted conversation before sending a message.');
       await api.sendMessage({
-        conversationId: 'conv-cand-001',
-        senderId: user?._id || 'usr-company-001',
-        senderName: user?.name || 'Richard Feynman',
-        senderRole: user?.role || 'company',
+        conversationId: activeContact.conversationId,
         recipientId: activeContact.id,
         recipientName: activeContact.name,
         content: text.trim()
@@ -56,7 +61,7 @@ export default function MessagesPage() {
       setText('');
       fetchMessages();
     } catch (err) {
-      console.warn('Send message error:', err);
+      setError(err.message || 'Unable to send message.');
     } finally {
       setSending(false);
     }
@@ -75,6 +80,7 @@ export default function MessagesPage() {
         </p>
       </div>
 
+      {error && <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-xs text-[#F87171]">{error}</div>}
       {/* Main Messaging Interface */}
       <div className="bg-[#171717] border border-[#303030] rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[550px]">
         {/* Left Contacts Column */}
@@ -84,30 +90,10 @@ export default function MessagesPage() {
           </span>
 
           <div className="space-y-1.5">
-            <div className="p-3 rounded-2xl bg-[#202020] border border-[#303030] flex items-center gap-3 cursor-pointer">
-              <img
-                src={activeContact.avatar}
-                alt={activeContact.name}
-                className="w-10 h-10 rounded-xl object-cover border border-[#303030] shrink-0"
-              />
-              <div className="overflow-hidden">
-                <p className="text-xs font-bold text-[#F5F5F5] truncate">{activeContact.name}</p>
-                <p className="text-[10px] text-[#777777] truncate">Senior React Engineer</p>
-                <span className="text-[9px] text-[#10B981] font-medium block mt-0.5">Online • São Paulo</span>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-2xl hover:bg-[#171717] flex items-center gap-3 cursor-pointer opacity-70">
-              <img
-                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
-                alt="Camila Fernandez"
-                className="w-10 h-10 rounded-xl object-cover border border-[#303030] shrink-0"
-              />
-              <div className="overflow-hidden">
-                <p className="text-xs font-semibold text-[#D4D4D4] truncate">Camila Fernandez</p>
-                <p className="text-[10px] text-[#777777] truncate">Lead Frontend • Buenos Aires</p>
-              </div>
-            </div>
+            {activeContact ? <div className="p-3 rounded-2xl bg-[#202020] border border-[#303030] flex items-center gap-3 cursor-pointer">
+              <div className="w-10 h-10 rounded-xl bg-[#171717] border border-[#303030] flex items-center justify-center text-xs text-[#A3A3A3]">{activeContact.name.slice(0, 1)}</div>
+              <div className="overflow-hidden"><p className="text-xs font-bold text-[#F5F5F5] truncate">{activeContact.name}</p><p className="text-[10px] text-[#777777] truncate">Persisted conversation</p></div>
+            </div> : <p className="px-2 py-8 text-center text-xs text-[#777777]">No authorized conversations yet.</p>}
           </div>
         </div>
 
@@ -116,14 +102,10 @@ export default function MessagesPage() {
           {/* Active Chat Header */}
           <div className="px-6 py-4 border-b border-[#303030] flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img
-                src={activeContact.avatar}
-                alt={activeContact.name}
-                className="w-9 h-9 rounded-xl object-cover border border-[#303030]"
-              />
+              <div className="w-9 h-9 rounded-xl bg-[#202020] border border-[#303030] flex items-center justify-center text-xs text-[#A3A3A3]">{activeContact?.name?.slice(0, 1) || '?'}</div>
               <div>
-                <h3 className="text-xs font-bold text-[#F5F5F5]">{activeContact.name}</h3>
-                <p className="text-[10px] text-[#777777]">{activeContact.title}</p>
+                <h3 className="text-xs font-bold text-[#F5F5F5]">{activeContact?.name || 'No conversation selected'}</h3>
+                <p className="text-[10px] text-[#777777]">{activeContact ? 'Authorized conversation' : 'Select a conversation to begin'}</p>
               </div>
             </div>
             <span className="text-[10px] text-[#10B981] font-mono px-2 py-0.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/20">
@@ -178,7 +160,7 @@ export default function MessagesPage() {
               size="sm"
               icon={Send}
               loading={sending}
-              disabled={!text.trim()}
+              disabled={!text.trim() || !activeContact}
               className="px-4 py-2.5 text-xs font-semibold"
             >
               Send

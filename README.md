@@ -1,118 +1,106 @@
-# Hirevoxa — Engineering Talent Hiring Platform
+# Hirevoxa — Vetted Latin American Engineering Talent Platform
 
-Hirevoxa connects US-based technology companies with thoroughly vetted software engineers across Latin America (including Brazil, Mexico, Colombia, and Argentina) through a focused, transparent hiring process featuring synchronous US timezone alignment.
-
----
-
-## 1. Architectural Overview
-
-Hirevoxa is a full-stack **MERN** application (MongoDB, Express, React, Node.js) structured as a unified monorepo:
-
-```
-HireVoxa/
-├── client/                     # Frontend Application (React + Vite + Tailwind CSS + Three.js)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── common/         # Badges, Buttons, Modals, Skill Icons, Stat Cards
-│   │   │   ├── dashboard/      # HeaderProfile, RecommendationHero, JobsTable
-│   │   │   └── home/           # Hero3DCanvas (Three.js WebGL architectural scene)
-│   │   ├── context/            # AuthContext (JWT, session persistence, demo switcher)
-│   │   ├── layouts/            # Collapsible Sidebar & Dashboard Layout
-│   │   ├── pages/              # LandingPage, Login, Register, ForgotPassword, Dashboard,
-│   │   │                       # Recommended, Jobs, Talents, Interviews, Calendar, Messages,
-│   │   │                       # Payments, Reports, Settings, NotFound
-│   │   ├── services/           # Reusable API Client with Auth Header handling
-│   │   └── index.css           # Global Black-First Design System Tokens
-│   ├── index.html
-│   └── vite.config.js
-├── server/                     # Backend API Service (Node.js + Express)
-│   ├── src/
-│   │   ├── config/             # DB Connection & Dual-Mode Fallback Manager
-│   │   ├── controllers/        # Auth, Candidates, Jobs, Interviews, Matching
-│   │   ├── middleware/         # Auth JWT protect/authorize, Helmet, Rate Limiter, Error Handler
-│   │   ├── models/             # Mongoose Schemas (User, Company, Candidate, Job, Interview, Shortlist, Message)
-│   │   ├── routes/             # REST API Routes (/api/auth, /api/candidates, /api/jobs, etc.)
-│   │   ├── seed/               # LatAm Engineering Candidate & Job Seed Records
-│   │   ├── services/           # Deterministic Candidate-Job Matching & In-Memory Store
-│   │   └── server.js           # Express App Configuration
-│   └── tests/                  # Automated API, Auth, and Matching Unit Tests (13 tests)
-├── .env.example
-├── .gitignore
-├── package.json
-└── README.md
-```
-
-### Dual-Mode Database Architecture
-- **MongoDB Mode:** If `MONGODB_URI` is provided, Mongoose connects to your MongoDB cluster (local or Atlas) with indexes and schemas.
-- **In-Memory Demonstration Mode:** If `MONGODB_URI` is omitted or temporarily unreachable, the backend automatically activates an in-memory data store seeded with realistic Latin American engineering candidates, jobs, and pre-seeded authentication profiles. Verified at `/api/health`.
+Hirevoxa connects US-based technology companies with thoroughly vetted senior software engineers across Latin America (including Brazil, Argentina, Colombia, and Mexico) through a deterministic matching engine, synchronous US continental timezone alignment, and integrated recruitment workflows.
 
 ---
 
-## 2. Visual Design System — Black First
+## Technology Stack
 
-Strictly adheres to the black-first palette:
-- **Main Background:** `#090909`
-- **Sidebar Background:** `#111111`
-- **Main Content:** `#0C0C0C`
-- **Standard Surface:** `#1B1B1B`
-- **Elevated Surface:** `#242424`
-- **Hover Surface:** `#2A2A2A`
-- **Borders:** `#333333` / `#222222`
-- **Primary Text:** `#F5F5F5`
-- **Secondary Text:** `#A3A3A3`
-- **Muted Text:** `#777777`
-- **Primary Button:** `#F5F5F5` (Dark text `#090909`)
-- **Success:** Muted Green (`#10B981`)
-- **Warning:** Restrained Amber (`#F59E0B`)
-- **Error:** Muted Red (`#EF4444`)
+- **Frontend (`client/`):** React 19 SPA, Vite 8, TailwindCSS 3, React Router v7, Lucide Icons, and Three.js WebGL canvas.
+- **Backend (`server/`):** Node.js 22 LTS, Express 4.21 REST API, Helmet security headers, cookie-based session management, CORS protection, and Express Rate Limit.
+- **Data & Persistence:** Mongoose 8.10 ODM with MongoDB Atlas replica set persistence, multi-attempt connection resilience, and credential sanitization; paired with an isolated in-memory adapter for test runs.
+- **Testing:** Native Node.js Test Runner (`node:test`) covering 171 automated unit, integration, RBAC, and lifecycle tests across 19 suites.
 
 ---
 
-## 3. Key Experiences
-
-1. **3D Marketing Homepage (`/`)**:
-   - Inspired by HUSD Dribbble reference.
-   - Interactive Three.js WebGL hero rendering an architectural faceted titanium polyhedron, orbiting talent nodes, and dynamic mouse parallax with graceful WebGL fallback.
-   - Bold editorial typography, structured 4-step workflow, featured roles, explainable matching matrix, and intake modal.
-
-2. **Authenticated Dashboard (`/app`)**:
-   - Faithful recreation of the recruitment dashboard reference.
-   - Persistent left sidebar with badges (`Dashboard`, `Recommended (9+)`, `Jobs (4)`, `Talents (9)`, `Payment`, `Settings`).
-   - Top account header: Richard Feynman user details, Esther Howard AE card, "Schedule Call" modal, and live notification drawer.
-   - Prominent Recommendation panel directly beneath the header with candidate details, skills, score, and "Schedule Interview" flow.
-   - "Your job" table underneath: Info, Skills (Python, JS, React), Experience, Commit., Status, Action ("View details").
-
-3. **Full Recruitment Workspace**:
-   - `/app/recommended`: Calibrated match scores, explainable fit breakdowns, shortlisting.
-   - `/app/talents`: Filterable directory by skills, seniority, country, timezone, rates.
-   - `/app/jobs`: Job creation, editing, and status management (Open, Trial, Fulfilled, On Hold, Draft).
-   - `/app/interviews`: Interview scheduling, status lifecycle (Pending, Confirmed, Completed, Cancelled).
-   - `/app/calendar`: Weekly hiring event timeline aligned with EST, CST, PST, BRT.
-   - `/app/messages`: Persistent candidate messaging.
-   - `/app/reports`: Analytics computed from active records (country distribution, top competencies).
-   - `/app/settings`: Profile, company, and notification alerts.
-   - `/login`, `/register`, `/forgot-password`: JWT auth with fast demo switching.
-
----
-
-## 4. Quick Start & Installation
+## Quick Start & Installation
 
 ### Prerequisites
-- Node.js >= 18.0.0
-- npm >= 9.0.0
+- **Node.js:** >= 20.0.0
+- **npm:** >= 10.0.0
+- **MongoDB:** MongoDB Atlas replica set URI or local MongoDB instance
 
-### Run Locally
+### Installation
 ```bash
+# Clone the repository and enter the directory
+git clone <repo-url>
+cd HireVoxa
+
 # Install root dependencies
 npm install
 
-# Run backend tests (all 13 tests passing)
-npm test
-
-# Run both client and server concurrently
-npm run dev
+# Install client and server dependencies
+npm --prefix client install
+npm --prefix server install
 ```
 
-- Frontend: `http://localhost:5173/`
-- Backend API: `http://localhost:5000/api`
-- Health check: `http://localhost:5000/api/health`
+### Environment Setup
+Create `server/.env` based on `.env.example`:
+```bash
+PORT=5000
+NODE_ENV=development
+CLIENT_ORIGIN=http://localhost:5173
+MONGODB_URI=mongodb+srv://<username>:<password>@hirevoxa-cluster.uvzqbhj.mongodb.net/hirevoxa?retryWrites=true&w=majority
+ALLOW_IN_MEMORY_DEMO=true
+JWT_SECRET=your_jwt_secret_dev_key_here
+```
+
+### Running Locally
+```bash
+# Start both server (port 5000) and client (port 5173) concurrently
+npm run dev
+
+# Or start services individually:
+npm run dev:server    # Express API on http://localhost:5000
+npm run dev:client    # Vite frontend on http://localhost:5173
+```
+
+- **Frontend Client:** [http://localhost:5173](http://localhost:5173)
+- **Backend API:** [http://localhost:5000/api](http://localhost:5000/api)
+- **System Health Check:** [http://localhost:5000/api/health](http://localhost:5000/api/health)
+- **Database Connectivity Diagnostics:** `npm --prefix server run db:check`
+
+### Quality Assurance & Automated Tests
+```bash
+# Run backend test suite (171 tests across 19 suites)
+npm test
+
+# Build frontend production bundle
+npm run build
+
+# Run frontend linting
+npm --prefix client run lint
+```
+
+---
+
+## Documentation Directory
+
+Authoritative, current platform documentation is organized within the [`docs/`](docs/) directory:
+
+- [**System Architecture (`docs/ARCHITECTURE.md`)**](docs/ARCHITECTURE.md): Monorepo structure, frontend architecture, matching engine, and security subsystems.
+- [**Database Architecture (`docs/DATABASE.md`)**](docs/DATABASE.md): Mongoose schemas, collections, indexing strategies, and connection resilience.
+- [**Deployment Guide (`docs/DEPLOYMENT.md`)**](docs/DEPLOYMENT.md): Production environment variables, Atlas Network Access, and admin bootstrapping.
+- [**Quality Assurance & Testing (`docs/TESTING.md`)**](docs/TESTING.md): Test runner configuration, test suite catalog, build, and lint checks.
+- [**Monetization & Entitlements (`docs/MONETIZATION.md`)**](docs/MONETIZATION.md): Pricing tiers (Candidate Free Forever, Starter $0, Placement $2,500, Pro $199/mo), billing webhooks, and limits.
+- [**Operations Admin Runbook (`docs/ADMIN-OPERATIONS-RUNBOOK.md`)**](docs/ADMIN-OPERATIONS-RUNBOOK.md): Administrative runbook for 3-tier RBAC, moderation, and audit logs.
+- [**System Lifecycle Flow (`docs/FLOW.md`)**](docs/FLOW.md): Detailed user journeys, role boundaries, and end-to-end platform workflows.
+- [**Project State & Phase Tracker (`docs/PROJECT_STATE_AND_PHASE_TRACKER.md`)**](docs/PROJECT_STATE_AND_PHASE_TRACKER.md): Current development milestones, verified evidence, and roadmap.
+
+### Production Readiness Audit Deliverables
+- [**Master Production Readiness Report (`docs/PRODUCTION_READINESS_REPORT.md`)**](docs/PRODUCTION_READINESS_REPORT.md): Verdict (**CONDITIONALLY READY**), category scores, and findings.
+- [**Production Blockers Register (`docs/PRODUCTION_BLOCKERS.md`)**](docs/PRODUCTION_BLOCKERS.md): Detailed root causes and remediation steps for all 5 pre-launch blockers.
+- [**Application Security Audit (`docs/SECURITY_AUDIT_REPORT.md`)**](docs/SECURITY_AUDIT_REPORT.md): In-depth security analysis, RBAC validation, and CVE findings.
+- [**Deployment Readiness Checklist (`docs/DEPLOYMENT_READINESS_CHECKLIST.md`)**](docs/DEPLOYMENT_READINESS_CHECKLIST.md): Operational pre-flight checklist.
+- [**Production Test Evidence (`docs/PRODUCTION_TEST_EVIDENCE.md`)**](docs/PRODUCTION_TEST_EVIDENCE.md): Raw concurrency benchmarks, automated test logs, and Atlas traces.
+
+---
+
+## Historical Reports & Archive
+
+Past audit reports, QA test matrices, phase summaries, and historical logs are archived in [`docs/archive/`](docs/archive/):
+
+- [`docs/archive/phase-reports/`](docs/archive/phase-reports/): Phase completion reports (Phase 0 through Phase 4.5).
+- [`docs/archive/qa-reports/`](docs/archive/qa-reports/): Live E2E QA reports, defect registers (`FINAL-QA-DEFECTS.md`), and test matrices.
+- [`docs/archive/old-audits/`](docs/archive/old-audits/): Initial pre-alpha technical audits and historical system reports.
+- [`docs/archive/superseded/`](docs/archive/superseded/): Superseded stubs and consolidated operational specs.

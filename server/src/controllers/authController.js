@@ -1,18 +1,56 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.js';
+import { Company } from '../models/Company.js';
 import { inMemoryStore, defaultUsers } from '../services/inMemoryStore.js';
 import { getDbMode } from '../config/db.js';
+import { Candidate } from '../models/Candidate.js';
+import { isValidEmail } from '../utils/securityUtils.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'hirevoxa_jwt_secret_dev_2026';
-const JWT_EXPIRES = '7d';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'hirevoxa_jwt_secret_dev_2026');
+const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '7d';
+
+if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'hirevoxa_jwt_secret_dev_2026')) {
+  console.error('[FATAL SECURITY ERROR] A dedicated, strong JWT_SECRET must be configured in production.');
+  process.exit(1);
+}
+
+export const setAuthCookie = (res, token) => {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie('hirevoxa_token', token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'strict' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/'
+  });
+};
+
+export const clearAuthCookie = (res) => {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.clearCookie('hirevoxa_token', {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'strict' : 'lax',
+    path: '/'
+  });
+};
 
 const generateToken = (user) => {
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured.');
+  }
+  const effectiveCompanyId = user.companyId || (user.role === 'company' ? String(user._id) : '');
   return jwt.sign(
     {
-      id: user._id,
+      id: String(user._id),
       email: user.email,
-      role: user.role
+      role: user.role,
+      adminRole: user.adminRole || (user.role === 'admin' ? 'owner' : undefined),
+      status: user.status || 'active',
+      name: user.name,
+      companyName: user.companyName,
+      companyId: effectiveCompanyId
     },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES }
@@ -27,8 +65,21 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Name, email, and password are required.' });
     }
 
+    if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ success: false, error: 'Name, email, and password must be valid text strings.' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ success: false, error: 'Please provide a valid email address.' });
+    }
+
     if (password.length < 6) {
       return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long.' });
+    }
+
+    const assignedRole = role || 'company';
+    if (!['company', 'candidate'].includes(assignedRole)) {
+      return res.status(400).json({ success: false, error: 'A new account must be either a company or candidate account.' });
     }
 
     const isMongo = getDbMode() === 'mongodb';
@@ -39,15 +90,38 @@ export const register = async (req, res, next) => {
         return res.status(400).json({ success: false, error: 'An account with this email already exists.' });
       }
 
+       const assignedCompanyName = companyName || (assignedRole === 'company' ? 'My Tech Startup' : '');
+
       const user = await User.create({
         name,
         email: email.toLowerCase(),
         password,
-        role: role || 'company',
-        companyName: companyName || (role === 'company' ? 'My Tech Startup' : '')
+        role: assignedRole,
+        companyName: assignedCompanyName
       });
 
+      // For company users, assign companyId and ensure Company record exists
+      if (assignedRole === 'company') {
+        user.companyId = String(user._id);
+        await user.save();
+        await Company.create({
+          name: assignedCompanyName,
+          ownerId: String(user._id),
+          authorizedMembers: [String(user._id)]
+        }).catch(() => null);
+      } else {
+        await Candidate.create({
+          userId: String(user._id),
+          name,
+          title: '',
+          yearsOfExperience: null,
+          skills: [],
+          profileVisibility: 'Private'
+        });
+      }
+
       const token = generateToken(user);
+      setAuthCookie(res, token);
       const userObj = user.toObject();
       delete userObj.password;
 
@@ -66,11 +140,22 @@ export const register = async (req, res, next) => {
         name,
         email,
         password,
-        role: role || 'company',
-        companyName: companyName || (role === 'company' ? 'My Tech Startup' : '')
-      });
+         role: assignedRole,
+         companyName: companyName || (assignedRole === 'company' ? 'My Tech Startup' : '')
+       });
+
+       if (assignedRole === 'candidate') {
+         await inMemoryStore.createCandidate({
+           userId: String(user._id),
+           name,
+           title: '',
+           yearsOfExperience: null,
+           skills: []
+         });
+       }
 
       const token = generateToken(user);
+      setAuthCookie(res, token);
       const { password: _, ...userSafe } = user;
 
       return res.status(201).json({
@@ -92,6 +177,14 @@ export const login = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Please provide both email and password.' });
     }
 
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email and password must be valid text strings.' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(401).json({ success: false, error: 'Invalid email or password.' });
+    }
+
     const isMongo = getDbMode() === 'mongodb';
     let user = null;
 
@@ -104,7 +197,20 @@ export const login = async (req, res, next) => {
       if (!isMatch) {
         return res.status(401).json({ success: false, error: 'Invalid email or password.' });
       }
+      if (user.status === 'suspended') {
+        const errorMsg = `Account suspended: ${user.suspendedReason || 'Please contact platform operations.'}`;
+        return res.status(403).json({
+          success: false,
+          error: errorMsg,
+          message: errorMsg
+        });
+      }
+      if (user.role === 'company' && !user.companyId) {
+        user.companyId = String(user._id);
+        await user.save();
+      }
       const token = generateToken(user);
+      setAuthCookie(res, token);
       const userObj = user.toObject();
       delete userObj.password;
       return res.json({ success: true, token, user: userObj });
@@ -117,7 +223,16 @@ export const login = async (req, res, next) => {
       if (!isMatch) {
         return res.status(401).json({ success: false, error: 'Invalid email or password.' });
       }
+      if (user.status === 'suspended') {
+        const errorMsg = `Account suspended: ${user.suspendedReason || 'Please contact platform operations.'}`;
+        return res.status(403).json({
+          success: false,
+          error: errorMsg,
+          message: errorMsg
+        });
+      }
       const token = generateToken(user);
+      setAuthCookie(res, token);
       const { password: _, ...userSafe } = user;
       return res.json({ success: true, token, user: userSafe });
     }
@@ -144,11 +259,27 @@ export const getMe = async (req, res, next) => {
   }
 };
 
+export const logout = async (req, res) => {
+  clearAuthCookie(res);
+  return res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+};
+
 export const demoLogin = async (req, res, next) => {
   try {
+    if (process.env.NODE_ENV === 'production' || getDbMode() === 'mongodb') {
+      return res.status(403).json({
+        success: false,
+        error: 'Demo authentication is disabled in production environments.'
+      });
+    }
+
     const { role = 'company' } = req.body;
     const targetUser = defaultUsers.find(u => u.role === role) || defaultUsers[0];
     const token = generateToken(targetUser);
+    setAuthCookie(res, token);
     const { password: _, ...userSafe } = targetUser;
     return res.json({
       success: true,

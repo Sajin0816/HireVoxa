@@ -4,13 +4,18 @@ import { Candidate } from '../models/Candidate.js';
 import { Job } from '../models/Job.js';
 import { Interview } from '../models/Interview.js';
 import { seedCandidates, seedJobs, seedInterviews } from './seedData.js';
+import { sanitizeError } from '../config/db.js';
 
 async function seedDatabase() {
   const uri = process.env.MONGODB_URI;
 
   if (!uri) {
-    console.log('[Seed] No MONGODB_URI provided. In-Memory store is automatically seeded upon server startup.');
-    process.exit(0);
+    console.error('[Seed] MONGODB_URI is required. The seed command never populates the in-memory store.');
+    process.exit(1);
+  }
+  if (process.env.ALLOW_DEMO_SEED !== 'true') {
+    console.error('[Seed] Demo seeding is disabled by default. Set ALLOW_DEMO_SEED=true only for an isolated development database.');
+    process.exit(1);
   }
 
   try {
@@ -33,7 +38,7 @@ async function seedDatabase() {
     console.log('[Seed] Seeding process complete.');
     process.exit(0);
   } catch (err) {
-    console.error('[Seed] Seeding failed:', err.message);
+    console.error('[Seed] Seeding failed:', sanitizeError(err));
     process.exit(1);
   }
 }

@@ -151,6 +151,8 @@ export const seedCandidates = [
 export const seedJobs = [
   {
     _id: "job-001",
+    companyId: "usr-company-001",
+    postedBy: "usr-company-001",
     title: "Senior Front-End Developer",
     description: "Looking for a seasoned frontend engineer to lead client-side web application architecture using React, modern JavaScript/TypeScript, and scalable CSS systems. You will collaborate directly with our US product and design teams.",
     department: "Core Product Engineering",
@@ -166,6 +168,8 @@ export const seedJobs = [
   },
   {
     _id: "job-002",
+    companyId: "usr-company-001",
+    postedBy: "usr-company-001",
     title: "Full-Stack Software Engineer",
     description: "Seeking a versatile full-stack engineer proficient in Node.js, Express, React, and MongoDB/PostgreSQL to accelerate feature delivery on our customer portal and partner APIs.",
     department: "Platform Engineering",
@@ -181,6 +185,8 @@ export const seedJobs = [
   },
   {
     _id: "job-003",
+    companyId: "usr-company-001",
+    postedBy: "usr-company-001",
     title: "Backend Cloud & API Engineer",
     description: "Experienced backend engineer needed to design and scale high-throughput RESTful services, implement message queuing, and maintain cloud infrastructure.",
     department: "Infrastructure & Data",
@@ -196,6 +202,8 @@ export const seedJobs = [
   },
   {
     _id: "job-004",
+    companyId: "usr-company-001",
+    postedBy: "usr-company-001",
     title: "DevOps & Infrastructure Architect",
     description: "Lead our cloud security, container orchestration with Kubernetes, automated CI/CD pipelines, and infrastructure as code deployment.",
     department: "DevOps",
@@ -214,6 +222,8 @@ export const seedJobs = [
 export const seedInterviews = [
   {
     _id: "int-001",
+    companyId: "usr-company-001",
+    createdBy: "usr-company-001",
     candidateId: "cand-001",
     jobId: "job-001",
     candidateName: "Rodrigo Feynman Silva",
@@ -228,6 +238,8 @@ export const seedInterviews = [
   },
   {
     _id: "int-002",
+    companyId: "usr-company-001",
+    createdBy: "usr-company-001",
     candidateId: "cand-002",
     jobId: "job-001",
     candidateName: "Camila Fernandez",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, Bookmark, BookmarkCheck, Filter, Info, ArrowRight, CheckCircle } from 'lucide-react';
+import { Sparkles, Calendar, Bookmark, BookmarkCheck, Filter, Info, CheckCircle } from 'lucide-react';
 import { api } from '../services/api';
 import SkillIcon from '../components/common/SkillIcon';
 import Badge from '../components/common/Badge';
@@ -14,7 +14,7 @@ export default function RecommendedPage() {
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
-  const [shortlistedIds, setShortlistedIds] = useState(new Set(['cand-001']));
+  const [shortlistedIds, setShortlistedIds] = useState(new Set());
   const [interviewForm, setInterviewForm] = useState({
     proposedDate: new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16),
     timeZone: 'EST',
@@ -94,8 +94,8 @@ export default function RecommendedPage() {
       });
       setScheduleSuccess(true);
     } catch (err) {
-      console.warn('Interview schedule fallback:', err);
-      setScheduleSuccess(true);
+      console.warn('Schedule interview error:', err.message || err);
+      setScheduleSuccess(false);
     }
   };
 
@@ -164,9 +164,9 @@ export default function RecommendedPage() {
                   <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#303030]">
                     <div className="flex items-center gap-3">
                       <img
-                        src={cand.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
+                        src={cand.avatarUrl || undefined}
                         alt={cand.name}
-                        className="w-12 h-12 rounded-2xl object-cover border border-[#303030]"
+                        className={`w-12 h-12 rounded-2xl object-cover border border-[#303030] ${cand.avatarUrl ? '' : 'hidden'}`}
                       />
                       <div>
                         <h3 className="font-bold text-sm text-[#F5F5F5]">{cand.name}</h3>
@@ -207,7 +207,7 @@ export default function RecommendedPage() {
                         Matched Skills:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
-                        {(rec.matchedSkills || cand.skills.slice(0, 4)).map((skill) => (
+                        {(rec.matchedSkills || cand.skills || []).map((skill) => (
                           <SkillIcon key={skill} skill={skill} />
                         ))}
                       </div>

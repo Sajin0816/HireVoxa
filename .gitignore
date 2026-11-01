@@ -9,9 +9,11 @@ build/
 
 # Environment files
 .env
+.env*
 .env.local
 .env.production
 .env.development
+server/.env*
 
 # Logs
 npm-debug.log*
@@ -31,3 +33,10 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Temporary chat attachments and tool state
+.opencode/
+
+# Private candidate documents (local development storage)
+server/storage/resumes/
+*.pdf

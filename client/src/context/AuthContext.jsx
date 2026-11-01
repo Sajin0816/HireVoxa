@@ -3,57 +3,49 @@ import { api } from '../services/api';
 
 const AuthContext = createContext(null);
 
-export const defaultCompanyUser = {
-  _id: 'usr-company-001',
-  name: 'Richard Feynman',
-  email: 'richardfeynman@gmail.com',
-  role: 'company',
-  companyName: 'Acme Technologies',
-  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-  accountExecutive: {
-    name: 'Esther Howard',
-    role: 'Account Executive - AE',
-    email: 'esther.howard@hirevoxa.internal',
-    avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=120&auto=format&fit=crop&q=80'
-  },
-  joinedDate: '27 April, 2024'
-};
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('hirevoxa_user');
-    if (saved) {
+    const savedToken = localStorage.getItem('hirevoxa_token');
+    if (saved && savedToken) {
       try {
         return JSON.parse(saved);
       } catch {
-        return defaultCompanyUser;
+        return null;
       }
     }
-    return defaultCompanyUser;
+    return null;
   });
 
-  const [token, setToken] = useState(() => localStorage.getItem('hirevoxa_token') || 'demo_token_richard_feynman');
+  const [token, setToken] = useState(() => localStorage.getItem('hirevoxa_token') || null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(() => !!localStorage.getItem('hirevoxa_token'));
 
   useEffect(() => {
-    // If we have a custom token, verify with backend
+    // If a token exists, verify with backend session
     async function verifyUser() {
       const storedToken = localStorage.getItem('hirevoxa_token');
-      if (storedToken && storedToken !== 'demo_token_richard_feynman') {
+      if (storedToken) {
         try {
           const res = await api.getMe();
           if (res?.user) {
             setUser(res.user);
             localStorage.setItem('hirevoxa_user', JSON.stringify(res.user));
+          } else {
+            throw new Error('Invalid user session');
           }
         } catch {
-          // Token invalid
+          // Session expired or invalid
           localStorage.removeItem('hirevoxa_token');
           localStorage.removeItem('hirevoxa_user');
-          setUser(defaultCompanyUser);
-          setToken('demo_token_richard_feynman');
+          setUser(null);
+          setToken(null);
         }
+      } else {
+        setUser(null);
+        setToken(null);
       }
+      setInitialLoading(false);
     }
     verifyUser();
   }, []);
@@ -67,7 +59,7 @@ export function AuthProvider({ children }) {
         setUser(res.user);
         localStorage.setItem('hirevoxa_token', res.token);
         localStorage.setItem('hirevoxa_user', JSON.stringify(res.user));
-        return { success: true };
+        return { success: true, user: res.user };
       }
       return { success: false, error: 'Invalid response from server' };
     } catch (err) {
@@ -86,7 +78,7 @@ export function AuthProvider({ children }) {
         setUser(res.user);
         localStorage.setItem('hirevoxa_token', res.token);
         localStorage.setItem('hirevoxa_user', JSON.stringify(res.user));
-        return { success: true };
+        return { success: true, user: res.user };
       }
       return { success: false, error: 'Registration failed' };
     } catch (err) {
@@ -105,35 +97,23 @@ export function AuthProvider({ children }) {
         setUser(res.user);
         localStorage.setItem('hirevoxa_token', res.token);
         localStorage.setItem('hirevoxa_user', JSON.stringify(res.user));
-        return { success: true };
+        return { success: true, user: res.user };
       }
+      return { success: false, error: 'Demo sign-in unavailable' };
     } catch (err) {
-      console.warn('Backend demo-login failed, falling back to local demo profile:', err);
-      // Fallback
-      if (role === 'candidate') {
-        const candUser = {
-          _id: 'usr-candidate-001',
-          name: 'Rodrigo Feynman Silva',
-          email: 'rodrigo@hirevoxa-latam.dev',
-          role: 'candidate',
-          companyName: '',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-          joinedDate: '10 January, 2024'
-        };
-        setUser(candUser);
-        setToken('demo_token_candidate');
-        localStorage.setItem('hirevoxa_user', JSON.stringify(candUser));
-      } else {
-        setUser(defaultCompanyUser);
-        setToken('demo_token_richard_feynman');
-        localStorage.setItem('hirevoxa_user', JSON.stringify(defaultCompanyUser));
-      }
+      console.warn('Backend demo-login failed:', err.message);
+      return { success: false, error: err.message || 'Demo sign-in unavailable' };
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // Ignore network errors on logout
+    }
     localStorage.removeItem('hirevoxa_token');
     localStorage.removeItem('hirevoxa_user');
     setUser(null);
@@ -146,7 +126,8 @@ export function AuthProvider({ children }) {
         user,
         token,
         loading,
-        isAuthenticated: !!user,
+        initialLoading,
+        isAuthenticated: !!user && !!token,
         login,
         register,
         demoLogin,

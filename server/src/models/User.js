@@ -11,21 +11,35 @@ const userSchema = new mongoose.Schema(
       enum: ['company', 'candidate', 'admin'],
       default: 'company'
     },
-    companyName: { type: String, trim: true, default: 'Acme Technologies' },
+    adminRole: {
+      type: String,
+      enum: ['owner', 'ops_admin', 'analyst', null],
+      default: null
+    },
+    status: {
+      type: String,
+      enum: ['active', 'suspended'],
+      default: 'active',
+      index: true
+    },
+    suspendedReason: { type: String, default: '' },
+    suspendedAt: { type: Date, default: null },
+    companyName: { type: String, trim: true, default: '' },
+    companyId: { type: String, trim: true, index: true },
     avatar: {
       type: String,
-      default: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
+      default: ''
     },
     accountExecutive: {
-      name: { type: String, default: 'Esther Howard' },
-      role: { type: String, default: 'Account Executive - AE' },
-      email: { type: String, default: 'esther.howard@hirevoxa.internal' },
+      name: { type: String, default: '' },
+      role: { type: String, default: '' },
+      email: { type: String, default: '' },
       avatar: {
         type: String,
-        default: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=120&auto=format&fit=crop&q=80'
+        default: ''
       }
     },
-    joinedDate: { type: String, default: '27 April, 2024' },
+    joinedDate: { type: String, default: '' },
     isDemoRecord: { type: Boolean, default: false }
   },
   { timestamps: true }

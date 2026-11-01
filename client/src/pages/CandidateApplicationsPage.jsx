@@ -1,0 +1,13 @@
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, FileText } from 'lucide-react';
+import { api } from '../services/api';
+import Badge from '../components/common/Badge';
+
+export default function CandidateApplicationsPage() {
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  useEffect(() => { api.getApplications().then((res) => setApplications(res.data || [])).catch((err) => setError(err.message || 'Unable to load applications.')).finally(() => setLoading(false)); }, []);
+  return <div className="space-y-7"><div><p className="text-xs uppercase tracking-[0.2em] text-[#777777]">Application tracker</p><h1 className="mt-2 text-3xl font-bold tracking-tight">Your applications.</h1><p className="mt-2 text-sm text-[#A3A3A3]">Review the latest status and submission date for each role.</p></div>{error && <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 p-4 text-sm text-[#F87171]">{error}</div>}{loading ? <div className="py-16 text-center text-sm text-[#777777]">Loading applications…</div> : applications.length === 0 ? <div className="rounded-2xl border border-dashed border-[#404040] p-12 text-center"><FileText className="mx-auto h-7 w-7 text-[#777777]" /><p className="mt-3 text-sm font-semibold">No applications yet</p><p className="mt-1 text-xs text-[#777777]">When you apply to a published role, it will appear here.</p><Link to="/candidate/jobs" className="mt-5 inline-flex rounded-full bg-[#F5F5F5] px-4 py-2 text-xs font-semibold text-[#090909]">Find jobs</Link></div> : <div className="space-y-3">{applications.map((application) => <Link to={`/candidate/applications/${application._id}`} key={application._id} className="flex items-center justify-between gap-4 rounded-2xl border border-[#303030] bg-[#1B1B1B] p-5 hover:border-[#606060]"><div className="min-w-0"><p className="truncate text-base font-semibold">{application.job?.title || 'Engineering role'}</p><p className="mt-1 text-xs text-[#888888]">{application.job?.companyName || 'Hiring organization'} · Submitted {new Date(application.submittedAt).toLocaleDateString()}</p><div className="mt-3 flex items-center gap-2">{application.resumeId && <span className="text-[11px] text-[#888888]">Resume attached</span>}</div></div><div className="flex shrink-0 items-center gap-3"><Badge variant={application.status === 'Rejected' ? 'error' : application.status === 'Hired' ? 'success' : 'default'}>{application.status}</Badge><ArrowRight className="h-4 w-4 text-[#777777]" /></div></Link>)}</div>}</div>;
+}

@@ -79,8 +79,7 @@ export default function TalentsPage() {
       });
       setScheduleSuccess(true);
     } catch (err) {
-      console.warn('Schedule interview fallback:', err);
-      setScheduleSuccess(true);
+      setScheduleSuccess(false);
     }
   };
 
@@ -177,9 +176,9 @@ export default function TalentsPage() {
                   {/* Header: Photo + Name + Location */}
                   <div className="flex items-start gap-3.5">
                     <img
-                      src={cand.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
+                      src={cand.avatarUrl || undefined}
                       alt={cand.name}
-                      className="w-13 h-13 rounded-2xl object-cover border border-[#303030] shrink-0"
+                        className={`w-13 h-13 rounded-2xl object-cover border border-[#303030] shrink-0 ${cand.avatarUrl ? '' : 'hidden'}`}
                     />
                     <div>
                       <h3 className="font-bold text-sm text-[#F5F5F5]">{cand.name}</h3>

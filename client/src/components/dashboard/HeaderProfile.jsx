@@ -11,79 +11,73 @@ export default function HeaderProfile() {
   const [callBooked, setCallBooked] = useState(false);
 
   const profile = {
-    name: user?.name || 'Richard Feynman',
-    email: user?.email || 'richardfeynman@gmail.com',
-    role: user?.companyName ? `${user.companyName} • Hiring Lead` : 'Engineering Director',
-    joinedDate: user?.joinedDate || '27 April, 2024',
-    avatar: user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'
+    name: user?.name || 'Hiring Lead',
+    email: user?.email || 'employer@hirevoxa.com',
+    role: user?.companyName ? `${user.companyName} • Hiring Lead` : 'Employer Workspace',
+    joinedDate: user?.joinedDate || 'Active Member',
+    avatar: user?.avatar || null
   };
 
-  const ae = user?.accountExecutive || {
-    name: 'Esther Howard',
-    role: 'Account Executive - AE',
-    email: 'esther.howard@hirevoxa.internal',
-    avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=120&auto=format&fit=crop&q=80'
-  };
+  const ae = user?.accountExecutive;
+  const notifications = [];
 
-  const notifications = [
-    {
-      id: 1,
-      title: 'New candidate match available',
-      detail: 'Rodrigo Feynman Silva matches 100% with Senior Front-End Developer.',
-      time: '10m ago'
-    },
-    {
-      id: 2,
-      title: 'Interview confirmed',
-      detail: 'Camila Fernandez confirmed for LatAm sync call.',
-      time: '2h ago'
-    }
-  ];
+  const getInitials = (name) => {
+    if (!name) return 'HL';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
 
   return (
     <div className="relative bg-[#171717] border border-[#303030] rounded-3xl p-5 mb-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-sm">
       {/* Left: User Avatar & Details */}
       <div className="flex items-center gap-4">
         <div className="relative">
-          <img
-            src={profile.avatar}
-            alt={profile.name}
-            className="w-14 h-14 rounded-2xl object-cover border border-[#303030] shadow-md"
-          />
+          {profile.avatar ? (
+            <img
+              src={profile.avatar}
+              alt={profile.name}
+              className="w-14 h-14 rounded-2xl object-cover border border-[#303030] shadow-md"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-2xl bg-[#262626] border border-[#303030] shadow-md flex items-center justify-center text-base font-bold text-[#F5F5F5] select-none">
+              {getInitials(profile.name)}
+            </div>
+          )}
           <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-[#10B981] border-2 border-[#171717] rounded-full" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#F5F5F5] tracking-tight">{profile.name}</h2>
-          <p className="text-xs text-[#A3A3A3]">{profile.email}</p>
+          <h2 className="text-xl font-bold text-[#F5F5F5] tracking-tight">{profile.name}</h2>
+          <p className="text-sm text-[#A3A3A3] mt-0.5">{profile.email}</p>
         </div>
       </div>
 
       {/* Right Controls matching screenshot: AE box, Schedule Call, Bell, Joined Date */}
       <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
         {/* Account Executive Pill Box */}
-        <div className="flex items-center gap-3 bg-[#202020] border border-[#303030] px-3.5 py-1.5 rounded-2xl">
+        {ae?.name && <div className="flex items-center gap-3 bg-[#202020] border border-[#303030] px-3.5 py-2 rounded-2xl">
           <img
             src={ae.avatar}
             alt={ae.name}
-            className="w-8 h-8 rounded-xl object-cover border border-[#303030]"
+            className="w-9 h-9 rounded-xl object-cover border border-[#303030]"
           />
           <div className="text-left">
-            <p className="text-xs font-semibold text-[#F5F5F5] leading-none">{ae.name}</p>
-            <p className="text-[10px] text-[#777777] mt-0.5 leading-none">{ae.role}</p>
+            <p className="text-sm font-semibold text-[#F5F5F5] leading-snug">{ae.name}</p>
+            <p className="text-xs text-[#8E8E8E] mt-0.5 leading-none">{ae.role}</p>
           </div>
-        </div>
+        </div>}
 
         {/* Schedule Call Button */}
-        <Button
+        {ae?.name && <Button
           variant="secondary"
           size="sm"
           onClick={() => setShowCallModal(true)}
           icon={ArrowRight}
           iconPosition="right"
-          className="text-xs font-semibold px-4 py-2"
+          className="text-sm font-semibold px-4 py-2"
         >
           Schedule Call
-        </Button>
+        </Button>}
 
         {/* Notification Bell */}
         <div className="relative">
@@ -99,10 +93,10 @@ export default function HeaderProfile() {
             <div className="absolute right-0 mt-2 w-80 bg-[#202020] border border-[#303030] rounded-2xl shadow-2xl p-3 z-50">
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#303030]">
                 <span className="text-xs font-semibold text-[#F5F5F5]">Notifications</span>
-                <span className="text-[10px] text-[#10B981] font-mono">2 updates</span>
+            <span className="text-[10px] text-[#777777] font-mono">{notifications.length} updates</span>
               </div>
               <div className="space-y-2">
-                {notifications.map((n) => (
+                {notifications.length === 0 ? <p className="p-3 text-xs text-[#777777]">No new notifications.</p> : notifications.map((n) => (
                   <div key={n.id} className="p-2.5 rounded-xl bg-[#171717] hover:bg-[#282828] text-xs transition-colors border border-[#303030]">
                     <p className="font-semibold text-[#F5F5F5]">{n.title}</p>
                     <p className="text-[11px] text-[#A3A3A3] mt-0.5">{n.detail}</p>
