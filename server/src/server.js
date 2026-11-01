@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { connectDB, disconnectDB, getDbMode } from './config/db.js';
+import { connectDB, disconnectDB, getDbMode, getDbName } from './config/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -73,8 +73,9 @@ app.use(cookieParser());
 // 4. Rate Limiter (protection against abuse)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' ? 5000 : 300,
   standardHeaders: true,
+  skip: (req) => req.path === '/health',
   legacyHeaders: false,
   message: {
     success: false,
@@ -94,6 +95,7 @@ app.get('/api/health', (req, res) => {
     service: 'Hirevoxa API Service',
     version: '1.0.0',
     mode: getDbMode(),
+    database: getDbName(),
     uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString()
   });

@@ -141,6 +141,9 @@ export async function updateMyProfile(req, res, next) {
 
     const updates = {};
     for (const field of allowedFields) if (merged[field] !== undefined) updates[field] = merged[field];
+    if (profileCompleteness(merged) === 100) {
+      updates.profileVisibility = 'Active';
+    }
     if (getDbMode() === 'in-memory-demo') {
       const updated = await inMemoryStore.updateCandidate(candidate._id, updates);
       return res.json({ success: true, message: 'Profile saved successfully.', mode: getDbMode(), data: cleanProfile(updated, true) });

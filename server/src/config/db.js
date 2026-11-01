@@ -97,7 +97,7 @@ export async function connectDB(overrideUri = null) {
           connectTimeoutMS: 5000,
           socketTimeoutMS: 20000,
           maxPoolSize: 10,
-          dbName: 'hirevoxa'
+          dbName: process.env.MONGODB_DB_NAME || 'hirevoxa'
         });
         activeDbMode = 'mongodb';
         console.log(`[Hirevoxa DB] Connected to MongoDB cluster host: ${conn.connection.host} (Database: ${conn.connection.name})`);
@@ -146,4 +146,11 @@ export async function disconnectDB() {
  */
 export function getDbMode() {
   return activeDbMode;
+}
+
+/**
+ * Returns the currently connected database name.
+ */
+export function getDbName() {
+  return mongoose.connection.name || 'none';
 }
