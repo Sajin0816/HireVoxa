@@ -7,12 +7,16 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { connectDB, disconnectDB, getDbMode, getDbName } from './config/db.js';
+import { connectDB, disconnectDB, getDbMode, getDbName, getDbState, sanitizeError, getMongoUri } from './config/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-dotenv.config();
+
+// Only load local .env files in non-production environments to preserve authoritative platform injection in Vercel
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.resolve(__dirname, '../.env') });
+  dotenv.config();
+}
 
 import candidateRoutes from './routes/candidateRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
@@ -88,14 +92,38 @@ app.use('/api', limiter);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// 6. Health Check Endpoint
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
+// 6. Comprehensive Health Check Endpoint
+// Awaits database connection assurance and reports granular state without exposing secret values
+app.get('/api/health', async (req, res) => {
+  let dbError = null;
+
+  try {
+    await connectDB();
+  } catch (err) {
+    dbError = sanitizeError(err);
+  }
+
+  const dbState = getDbState();
+  const isConnected = dbState === 'connected';
+  const hasUri = Boolean(getMongoUri());
+
+  const statusCode = isConnected ? 200 : 503;
+
+  res.status(statusCode).json({
+    status: isConnected ? 'ok' : 'degraded',
     service: 'Hirevoxa API Service',
     version: '1.0.0',
     mode: getDbMode(),
     database: getDbName(),
+    connectionState: dbState,
+    ...(dbError ? { error: dbError } : {}),
+    diagnostics: {
+      variablePresent: hasUri,
+      variableLength: hasUri ? process.env.MONGODB_URI.trim().length : 0,
+      jwtConfigured: Boolean(process.env.JWT_SECRET && process.env.JWT_SECRET.trim() !== '' && process.env.JWT_SECRET !== 'hirevoxa_jwt_secret_dev_2026'),
+      runtime: process.env.VERCEL_ENV || 'local',
+      nodeEnvironment: process.env.NODE_ENV || 'development'
+    },
     uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString()
   });
@@ -149,7 +177,7 @@ if (fs.existsSync(clientDistPath)) {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Only listen if executed directly, not when imported in test suites
+// Only listen if executed directly, not when imported in test suites or serverless functions
 const isDirectRun = (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) || process.env.AUTO_START === 'true';
 if (isDirectRun && process.env.NODE_ENV !== 'test') {
   connectDB()
@@ -163,10 +191,6 @@ if (isDirectRun && process.env.NODE_ENV !== 'test') {
       console.error(`[FATAL DATABASE CONFIGURATION ERROR] ${error.message}`);
       process.exitCode = 1;
     });
-} else {
-  connectDB().catch((error) => {
-    console.error(`[DATABASE CONFIGURATION ERROR] ${error.message}`);
-  });
 }
 
 // Graceful shutdown handling

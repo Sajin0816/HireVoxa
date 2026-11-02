@@ -3,10 +3,13 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-dotenv.config();
+// Only load local .env files in non-production environments to preserve authoritative platform injection in Vercel
+if (process.env.NODE_ENV !== 'production') {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+  dotenv.config();
+}
 
 let activeDbMode = 'unavailable';
 let connectionPromise = null;
@@ -52,7 +55,7 @@ export function isDemoModeAllowed() {
  */
 export async function connectDB(overrideUri = null) {
   // If already connected, ensure operating mode is synchronized and return
-  if (mongoose.connection.readyState === 1) {
+  if (mongoose.connection && mongoose.connection.readyState === 1) {
     activeDbMode = 'mongodb';
     return mongoose.connection;
   }
@@ -93,10 +96,13 @@ export async function connectDB(overrideUri = null) {
       try {
         attempts++;
         const conn = await mongoose.connect(uri, {
-          serverSelectionTimeoutMS: 5000,
-          connectTimeoutMS: 5000,
-          socketTimeoutMS: 20000,
+          serverSelectionTimeoutMS: 15000,
+          connectTimeoutMS: 15000,
+          socketTimeoutMS: 30000,
           maxPoolSize: 10,
+          minPoolSize: 0,
+          retryWrites: true,
+          w: 'majority',
           dbName: process.env.MONGODB_DB_NAME || 'hirevoxa'
         });
         activeDbMode = 'mongodb';
@@ -104,8 +110,8 @@ export async function connectDB(overrideUri = null) {
         return conn;
       } catch (error) {
         if (attempts < maxAttempts) {
-          console.warn(`[Hirevoxa DB] Initial connection attempt ${attempts} encountered transient issue (${sanitizeError(error)}). Retrying in 2s...`);
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          console.warn(`[Hirevoxa DB] Connection attempt ${attempts} encountered transient issue (${sanitizeError(error)}). Retrying in 1.5s...`);
+          await new Promise((resolve) => setTimeout(resolve, 1500));
           continue;
         }
 
@@ -134,7 +140,7 @@ export async function connectDB(overrideUri = null) {
  */
 export async function disconnectDB() {
   connectionPromise = null;
-  if (mongoose.connection.readyState !== 0) {
+  if (mongoose.connection && mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
     console.log('[Hirevoxa DB] Disconnected cleanly from MongoDB.');
   }
@@ -142,15 +148,47 @@ export async function disconnectDB() {
 }
 
 /**
- * Returns current database operating mode ('mongodb', 'in-memory-demo', or 'unavailable').
+ * Returns current database operating mode ('mongodb', 'in-memory-demo', 'connecting', or 'unavailable').
  */
 export function getDbMode() {
+  if (mongoose.connection && mongoose.connection.readyState === 1) {
+    return 'mongodb';
+  }
+  if (mongoose.connection && mongoose.connection.readyState === 2) {
+    return 'connecting';
+  }
   return activeDbMode;
+}
+
+/**
+ * Returns granular database connection state:
+ * 'connected', 'connecting', 'configuration_missing', 'connection_failed', or 'disconnected'.
+ */
+export function getDbState() {
+  const hasUri = Boolean(getMongoUri());
+  if (!hasUri && !isDemoModeAllowed()) {
+    return 'configuration_missing';
+  }
+  if (!mongoose.connection) {
+    return activeDbMode === 'in-memory-demo' ? 'connected' : 'disconnected';
+  }
+  switch (mongoose.connection.readyState) {
+    case 1:
+      return 'connected';
+    case 2:
+      return 'connecting';
+    case 3:
+      return 'disconnecting';
+    default:
+      if (activeDbMode === 'in-memory-demo') return 'connected';
+      if (activeDbMode === 'unavailable') return 'connection_failed';
+      return 'disconnected';
+  }
 }
 
 /**
  * Returns the currently connected database name.
  */
 export function getDbName() {
-  return mongoose.connection.name || 'none';
+  return (mongoose.connection && mongoose.connection.name) || 'none';
 }

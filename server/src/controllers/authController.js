@@ -9,18 +9,20 @@ import { isValidEmail } from '../utils/securityUtils.js';
 
 export const normalizeEmail = (val) => (typeof val === 'string' ? val.trim().toLowerCase() : '');
 
-const getJwtSecret = () => {
-  if (process.env.JWT_SECRET && process.env.JWT_SECRET !== 'hirevoxa_jwt_secret_dev_2026') {
-    return process.env.JWT_SECRET;
+let jwtWarned = false;
+export const getJwtSecret = () => {
+  if (process.env.JWT_SECRET && process.env.JWT_SECRET.trim() !== '' && process.env.JWT_SECRET !== 'hirevoxa_jwt_secret_dev_2026') {
+    return process.env.JWT_SECRET.trim();
   }
   if (process.env.NODE_ENV === 'production') {
-    console.warn('[SECURITY NOTICE] Dedicated JWT_SECRET environment variable not detected. Using secured fallback token.');
+    if (!jwtWarned) {
+      console.warn('[SECURITY NOTICE] Dedicated JWT_SECRET environment variable not detected. Using secured fallback token.');
+      jwtWarned = true;
+    }
     return process.env.JWT_SECRET || 'hirevoxa_prod_preview_secret_fallback_2026_secured';
   }
   return 'hirevoxa_jwt_secret_dev_2026';
 };
-
-const JWT_SECRET = getJwtSecret();
 const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '7d';
 
 export const setAuthCookie = (res, token) => {
@@ -45,7 +47,8 @@ export const clearAuthCookie = (res) => {
 };
 
 const generateToken = (user) => {
-  if (!JWT_SECRET) {
+  const secret = getJwtSecret();
+  if (!secret) {
     throw new Error('JWT_SECRET is not configured.');
   }
   const effectiveCompanyId = user.companyId || (user.role === 'company' ? String(user._id) : '');
@@ -60,7 +63,7 @@ const generateToken = (user) => {
       companyName: user.companyName,
       companyId: effectiveCompanyId
     },
-    JWT_SECRET,
+    secret,
     { expiresIn: JWT_EXPIRES }
   );
 };

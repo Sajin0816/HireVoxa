@@ -2,18 +2,20 @@ import jwt from 'jsonwebtoken';
 import { inMemoryStore } from '../services/inMemoryStore.js';
 import { getDbMode } from '../config/db.js';
 
-const getJwtSecret = () => {
-  if (process.env.JWT_SECRET && process.env.JWT_SECRET !== 'hirevoxa_jwt_secret_dev_2026') {
-    return process.env.JWT_SECRET;
+let jwtWarned = false;
+export const getJwtSecret = () => {
+  if (process.env.JWT_SECRET && process.env.JWT_SECRET.trim() !== '' && process.env.JWT_SECRET !== 'hirevoxa_jwt_secret_dev_2026') {
+    return process.env.JWT_SECRET.trim();
   }
   if (process.env.NODE_ENV === 'production') {
-    console.warn('[SECURITY NOTICE] Dedicated JWT_SECRET environment variable not detected. Using secured fallback token.');
+    if (!jwtWarned) {
+      console.warn('[SECURITY NOTICE] Dedicated JWT_SECRET environment variable not detected. Using secured fallback token.');
+      jwtWarned = true;
+    }
     return process.env.JWT_SECRET || 'hirevoxa_prod_preview_secret_fallback_2026_secured';
   }
   return 'hirevoxa_jwt_secret_dev_2026';
 };
-
-const JWT_SECRET = getJwtSecret();
 
 export const protect = async (req, res, next) => {
   let token = null;
@@ -63,7 +65,7 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     if (decoded.status === 'suspended') {
       return res.status(403).json({
         success: false,
@@ -119,7 +121,7 @@ export const optionalAuth = (req, res, next) => {
   if (!token) return next();
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded;
     req.user.companyId = decoded.companyId || (decoded.role === 'company' ? decoded.id : undefined);
   } catch {
