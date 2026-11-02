@@ -23,8 +23,12 @@ import Badge from '../components/common/Badge';
 import Modal from '../components/common/Modal';
 import SkillIcon from '../components/common/SkillIcon';
 import Hero3DCanvas from '../components/home/Hero3DCanvas';
+import MarketingNavbar from '../components/common/MarketingNavbar';
+import MarketingFooter from '../components/common/MarketingFooter';
+import { useAuth } from '../context/AuthContext';
 
 export default function LandingPage() {
+  const { user, dashboardPath } = useAuth();
   const [showHireModal, setShowHireModal] = useState(false);
   const [hireSubmitted, setHireSubmitted] = useState(false);
   const [hireForm, setHireForm] = useState({ role: '', techStack: '' });
@@ -102,46 +106,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#090909] text-[#F5F5F5] selection:bg-[#282828] selection:text-white">
       {/* 1. Navigation Header */}
-      <nav className="sticky top-0 z-40 bg-[#090909]/95 backdrop-blur-md border-b border-[#303030]">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center transition-opacity hover:opacity-90">
-            {/* Desktop & Tablet: Full official Hirevoxa brand logo with tagline */}
-            <img
-              src="/images/hirevoxa-logo.png"
-              alt="Hirevoxa — Engineering Talent, Amplified"
-              className="h-10 md:h-11 w-auto object-contain hidden sm:block"
-            />
-            {/* Mobile / Compact: Standalone metallic H symbol */}
-            <img
-              src="/images/hirevoxa-icon.png"
-              alt="Hirevoxa — Engineering Talent, Amplified"
-              className="h-9 w-9 object-contain block sm:hidden"
-            />
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider text-[#A3A3A3]">
-            <a href="#value" className="hover:text-white transition-colors">Value</a>
-            <a href="#workflow" className="hover:text-white transition-colors">How It Works</a>
-            <a href="#roles" className="hover:text-white transition-colors">Roles</a>
-            <a href="#matching" className="hover:text-white transition-colors">Matching</a>
-            <Link to="/pricing" className="hover:text-white transition-colors text-[#F59E0B]">Pricing</Link>
-            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link to="/login">
-              <Button variant="ghost" size="sm" className="text-xs font-semibold">
-                Sign In
-              </Button>
-            </Link>
-            <Link to="/app">
-              <Button variant="primary" size="sm" className="text-xs font-semibold">
-                Recruitment Dashboard
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <MarketingNavbar />
 
       {/* 2. Hero Section (3D Showcase inspired by HUSD) */}
       <section className="relative pt-12 pb-24 px-6 overflow-hidden border-b border-[#303030]">
@@ -596,31 +561,7 @@ export default function LandingPage() {
       </section>
 
       {/* 10. Footer */}
-      <footer className="py-12 px-6 bg-[#090909] border-t border-[#303030]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-[#777777]">
-          <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-            <Link to="/" className="flex items-center transition-opacity hover:opacity-90">
-              <img
-                src="/images/hirevoxa-logo.png"
-                alt="Hirevoxa — Engineering Talent, Amplified"
-                className="h-8 md:h-9 w-auto object-contain hidden sm:block"
-              />
-              <img
-                src="/images/hirevoxa-icon.png"
-                alt="Hirevoxa — Engineering Talent, Amplified"
-                className="h-7 w-7 object-contain block sm:hidden"
-              />
-            </Link>
-            <span>© {new Date().getFullYear()} Hirevoxa Inc. All rights reserved.</span>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <Link to="/app" className="hover:text-white transition-colors">Workspace</Link>
-            <Link to="/login" className="hover:text-white transition-colors">Sign In</Link>
-            <Link to="/register" className="hover:text-white transition-colors">Register</Link>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
 
       {/* Requisition Intake Modal */}
       <Modal

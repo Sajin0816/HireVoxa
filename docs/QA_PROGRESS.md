@@ -164,3 +164,61 @@
 - **Production Build:** `npm run build` compiled 1,982 modules with **0 errors**.
 - **Linter Check:** `oxlint` reported **0 errors**.
 
+
+---
+
+## 10. Authentication-Aware Marketing Navigation & Role-Based Dashboard CTA
+
+**Implemented:** November 2, 2026  
+**Objective:** Provide unified, state-aware navigation across all public marketing entry points (`LandingPage`, `PricingPage`, and footers) so authenticated users see a single, role-aware **Dashboard** button and never see conflicting "Sign In" / "Register" prompts, while unauthenticated visitors receive seamless onboarding CTAs.
+
+### A. Root Cause Analysis
+
+Prior to this fix, public marketing headers and footers exhibited state and role inconsistencies:
+1. `client/src/pages/LandingPage.jsx` hardcoded public header actions with static links to `/login` and `/app` ("Recruitment Dashboard"), regardless of whether the user was authenticated or what their role was.
+2. If an authenticated candidate clicked the header, they were routed to `/app` (an employer route), leading to access errors or role confusion instead of their dedicated candidate portal (`/candidate`).
+3. `client/src/pages/PricingPage.jsx` had a disconnected ternary that flashed unauthenticated CTAs before `initialLoading` completed.
+4. Mobile hamburger menus and footers lacked centralized session and role awareness.
+
+### B. Architectural Solution & File Inventory
+
+1. **`client/src/utils/navigation.js`**:
+   - Authoritative mapping utility:
+     - `getDashboardPath(user)`: Returns `/candidate` for role `candidate`, `/admin` for role `admin`, and `/app` for role `company` / `employer`. Unauthenticated or invalid roles safely fall back to `/login` or `/app`. Case-insensitive and trimmed.
+     - `getDashboardLabel(user)`: Generates contextual labels (`Candidate Portal`, `Admin Workspace`, `Employer Dashboard`, `Dashboard`).
+2. **`client/src/context/AuthContext.jsx`**:
+   - Integrated `getDashboardPath(user)` directly into the primary auth context value (`dashboardPath`), providing a single source of truth for routing throughout the application.
+3. **`client/src/components/common/MarketingNavbar.jsx`**:
+   - Reusable, fully responsive marketing navbar.
+   - **Hydration Protection:** Displays a subtle, neutral skeleton placeholder during `initialLoading`, completely preventing CTA flashing or layout shifts.
+   - **Authenticated State:** Renders a single prominent `Dashboard` CTA with `LayoutDashboard` icon routing directly to `dashboardPath`. Hides all "Sign In" and "Register" actions.
+   - **Unauthenticated State:** Renders "Sign In" (ghost) and "Get Started" (primary glow) CTAs.
+   - **Responsive Drawer:** Mobile menu (<768px) displays user identity badge with role chip and a full-width `Go to Dashboard` CTA for authenticated users, or clean onboarding options for visitors.
+4. **`client/src/components/common/MarketingFooter.jsx`**:
+   - Standardized marketing footer. Dynamically swaps between "Sign In / Register" and "Dashboard" links based on live session state.
+5. **`client/src/pages/LandingPage.jsx` & `client/src/pages/PricingPage.jsx`**:
+   - Replaced fragmented inline headers and footers with `<MarketingNavbar />` and `<MarketingFooter />`. Dynamic CTA buttons inside heroes and modals now link to `dashboardPath`.
+6. **`server/tests/navigation_utils.test.js`**:
+   - Comprehensive unit test suite verifying destination routing across all roles and edge cases.
+
+### C. Live Browser Verification & QA Evidence
+
+Tested on local full-stack (`http://localhost:5173`, backend `http://localhost:5000` connected to MongoDB Atlas `hirevoxa_qa`) via Google Chrome CDP automation.
+
+| Scenario | Viewport | User / Role | Actions & Verifications | Result | Evidence File |
+| :--- | :---: | :--- | :--- | :---: | :--- |
+| **1. Employer Workflow** | 1280x800 | `elena.qa@hirevoxa-test.internal` (`company`) | Authenticated employer navigated to `/`. Header showed single "Go to Dashboard" button; "Sign In" / "Register" hidden. Clicked button -> routed to `/app`. | **PASS** | [`docs/screenshots/01_employer_marketing_nav_authenticated.png`](screenshots/01_employer_marketing_nav_authenticated.png) |
+| **2. Candidate Workflow** | 1280x800 | `mateo.qa@hirevoxa-latam.dev` (`candidate`) | Authenticated candidate navigated to `/`. Header showed single "Go to Dashboard" button. Clicked button -> routed cleanly to `/candidate` (not `/app`). | **PASS** | [`docs/screenshots/02_candidate_marketing_nav_authenticated.png`](screenshots/02_candidate_marketing_nav_authenticated.png) |
+| **3. Unauthenticated Workflow** | 1280x800 | Visitor (No active token) | Cleared session, loaded `/`. Header displayed "Sign In" and "Get Started"; footer showed "Sign In" and "Register". Clicked "Sign In" -> routed to `/login`. | **PASS** | [`docs/screenshots/03_unauthenticated_marketing_nav.png`](screenshots/03_unauthenticated_marketing_nav.png) |
+| **4. Refresh & Hydration** | 1280x800 | Active Candidate Session | Reloaded page with active session. Neutral skeleton reserved layout during auth initialization. 0ms flash of "Sign In" / "Register". "Go to Dashboard" persisted. | **PASS** | Verified via Live CDP Dom Check |
+| **5. Session Expiration** | 1280x800 | Corrupted Token | Injected invalid JWT token. On reload, auth context cleanly resolved to unauthenticated. Attempted direct navigation to `/app` -> `ProtectedRoute` redirected to `/login`. | **PASS** | Verified via Protected Route Guard |
+| **6. Mobile Viewport (Drawer)** | 375x667 | `elena.qa@hirevoxa-test.internal` (`company`) | Mobile header rendered compact "Go to Dashboard" button. Opened hamburger drawer -> displayed "Elena Rostova", "COMPANY" badge, and full-width "Go to Dashboard" CTA. | **PASS** | [`docs/screenshots/04_mobile_nav_authenticated.png`](screenshots/04_mobile_nav_authenticated.png) |
+| **7. Mobile Viewport (Visitor)** | 375x667 | Visitor (No active token) | Unauthenticated mobile drawer rendered "Sign In" and "Get Started" links. | **PASS** | [`docs/screenshots/05_mobile_nav_unauthenticated.png`](screenshots/05_mobile_nav_unauthenticated.png) |
+| **8. Tablet Viewport** | 768x1024 | `elena.qa@hirevoxa-test.internal` (`company`) | Tablet viewport rendered clean horizontal navigation with prominent "Go to Dashboard" CTA. Clicked -> routed to `/app`. | **PASS** | Verified via Live CDP Dom Check |
+| **9. Pricing Page Navigation** | 1280x800 | Authenticated & Unauthenticated | Navigated to `/pricing`. When authenticated, displayed "Go to Dashboard". When unauthenticated, displayed "Sign In" and "Get Started". | **PASS** | Verified via Live CDP Dom Check |
+
+### D. Automated Test & Build Summary
+
+- **Navigation Unit Tests (`server/tests/navigation_utils.test.js`):** 5/5 subtests passed (duration 5ms).
+- **Client Build (`npm --prefix client run build`):** 1,985 modules compiled cleanly in 7.37s with **0 errors**.
+- **Code Linter (`oxlint`):** Finished with **0 errors**.

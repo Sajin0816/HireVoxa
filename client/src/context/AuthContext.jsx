@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { getDashboardPath } from '../utils/navigation';
 
 const AuthContext = createContext(null);
 
@@ -128,6 +129,7 @@ export function AuthProvider({ children }) {
         loading,
         initialLoading,
         isAuthenticated: !!user && !!token,
+        dashboardPath: getDashboardPath(user),
         login,
         register,
         demoLogin,

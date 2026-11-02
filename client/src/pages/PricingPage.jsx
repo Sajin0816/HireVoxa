@@ -9,6 +9,8 @@ import {
 import Button from '../components/common/Button';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import MarketingNavbar from '../components/common/MarketingNavbar';
+import MarketingFooter from '../components/common/MarketingFooter';
 
 export default function PricingPage() {
   const { user } = useAuth();
@@ -37,6 +39,14 @@ export default function PricingPage() {
   const proPrice = pricingData?.EMPLOYER_PRO?.priceFormatted || '$199';
   const placementFee = pricingData?.SUCCESSFUL_PLACEMENT?.feeFormatted || '$2,500';
   const guaranteeDays = pricingData?.SUCCESSFUL_PLACEMENT?.guaranteePeriodDays || 90;
+
+  const pricingNavLinks = [
+    { label: 'Home', to: '/' },
+    { label: 'How It Works', href: '/#workflow' },
+    { label: 'Roles', href: '/#roles' },
+    { label: 'Pricing', to: '/pricing', isHighlight: true },
+    { label: 'FAQ', href: '/#faq' }
+  ];
 
   const faqs = [
     {
@@ -68,48 +78,7 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-[#090909] text-[#F5F5F5] selection:bg-[#F59E0B] selection:text-black font-sans">
       {/* 1. Header Navigation */}
-      <nav className="border-b border-[#1B1B1B] bg-[#090909]/90 backdrop-blur sticky top-0 z-50 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img
-              src="/images/hirevoxa-logo-gold.png"
-              alt="Hirevoxa Logo"
-              className="h-8 object-contain"
-            />
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider text-[#A3A3A3]">
-            <Link to="/" className="hover:text-white transition-colors">Home</Link>
-            <Link to="/app/talents" className="hover:text-white transition-colors">Talent Directory</Link>
-            <Link to="/pricing" className="text-[#F59E0B]">Pricing</Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {user ? (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => navigate(user.role === 'candidate' ? '/candidate' : user.role === 'admin' ? '/admin' : '/app')}
-              >
-                Go to Workspace
-              </Button>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="ghost" size="sm" className="text-xs font-semibold">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button variant="primary" size="sm" className="text-xs font-semibold">
-                    Create Account
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <MarketingNavbar links={pricingNavLinks} />
 
       {/* 2. Hero Headline */}
       <section className="pt-16 pb-12 px-6 text-center max-w-4xl mx-auto">
@@ -374,20 +343,7 @@ export default function PricingPage() {
       </section>
 
       {/* 6. Footer */}
-      <footer className="border-t border-[#1B1B1B] py-12 px-6 bg-[#080808] text-center text-xs text-[#737373]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-[#A3A3A3]">Hirevoxa</span>
-            <span>&copy; {new Date().getFullYear()} All rights reserved.</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link to="/" className="hover:text-white">Home</Link>
-            <Link to="/pricing" className="hover:text-white">Pricing</Link>
-            <Link to="/login" className="hover:text-white">Sign In</Link>
-            <Link to="/register" className="hover:text-white">Register</Link>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }
