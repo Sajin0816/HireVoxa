@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BriefcaseBusiness, FileText, LayoutDashboard, LogOut, Menu, UserRound, X } from 'lucide-react';
+import { BriefcaseBusiness, FileText, LayoutDashboard, LogOut, Menu, MessageSquare, UserRound, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LogoutModal from '../components/common/LogoutModal';
 
@@ -9,6 +9,7 @@ const links = [
   { label: 'My profile', path: '/candidate/profile', icon: UserRound },
   { label: 'Find jobs', path: '/candidate/jobs', icon: BriefcaseBusiness },
   { label: 'My applications', path: '/candidate/applications', icon: FileText },
+  { label: 'Messages', path: '/candidate/messages', icon: MessageSquare },
   { label: 'Resume', path: '/candidate/resume', icon: FileText }
 ];
 

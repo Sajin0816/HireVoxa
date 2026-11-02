@@ -91,6 +91,7 @@ export default function App() {
             <Route path="jobs/:jobId" element={<CandidateJobDetailPage />} />
             <Route path="applications" element={<CandidateApplicationsPage />} />
             <Route path="applications/:id" element={<CandidateApplicationDetailPage />} />
+            <Route path="messages" element={<MessagesPage />} />
           </Route>
 
           {/* Operations Admin Workspace Application Shell */}

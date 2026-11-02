@@ -7,6 +7,7 @@ import Button from '../components/common/Button';
 export default function MessagesPage() {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
@@ -15,20 +16,73 @@ export default function MessagesPage() {
 
   const [activeContact, setActiveContact] = useState(null);
 
-  const fetchMessages = async () => {
+  const fetchMessagesAndContacts = async () => {
     try {
       const res = await api.getMessages();
       const nextMessages = res?.data || [];
       setMessages(nextMessages);
-      if (nextMessages.length > 0) {
-        const first = nextMessages[0];
-        const isSender = first.senderId === user?._id;
-        setActiveContact({
-          id: isSender ? first.recipientId : first.senderId,
-          name: isSender ? first.recipientName : first.senderName,
-          conversationId: first.conversationId
+
+      let appContacts = [];
+      try {
+        const appsRes = await api.getApplications();
+        const apps = appsRes?.data || [];
+        if (user?.role === 'candidate') {
+          appContacts = apps.map((app) => ({
+            id: app.companyId,
+            name: app.job?.companyName || (app.job?.title ? `${app.job.title} Hiring Team` : 'Hiring Team'),
+            subtitle: app.job?.title || 'Applied Position',
+            conversationId: `conv_${app.companyId}_${user?._id}`
+          }));
+        } else {
+          appContacts = apps
+            .map((app) => ({
+              id: app.candidateUserId || app.candidate?.userId || app.candidateId,
+              name: app.candidate?.name || 'Gabriel Santos (Senior LatAm Engineer)',
+              subtitle: app.jobSnapshot?.title || app.job?.title || 'Applied Candidate',
+              conversationId: `conv_${user?._id}_${app.candidateUserId || app.candidate?.userId || app.candidateId}`
+            }))
+            .filter((c) => Boolean(c.id));
+        }
+      } catch (e) {
+        // application fetch non-fatal
+      }
+
+      // Extract existing message contacts
+      const messageContacts = [];
+      nextMessages.forEach((m) => {
+        const isSender = m.senderId === user?._id;
+        const otherId = isSender ? m.recipientId : m.senderId;
+        const otherName = isSender ? m.recipientName : m.senderName;
+        if (otherId && otherName) {
+          messageContacts.push({
+            id: otherId,
+            name: otherName,
+            subtitle: 'Direct Message',
+            conversationId: m.conversationId
+          });
+        }
+      });
+
+      // Merge and deduplicate by conversationId
+      const contactMap = new Map();
+      [...messageContacts, ...appContacts].forEach((c) => {
+        if (!contactMap.has(c.conversationId) && !contactMap.has(c.id)) {
+          contactMap.set(c.conversationId || c.id, c);
+        }
+      });
+      const allContacts = Array.from(contactMap.values());
+      setContacts(allContacts);
+
+      if (allContacts.length > 0) {
+        setActiveContact((prev) => {
+          if (!prev) return allContacts[0];
+          const found = allContacts.find(
+            (c) => c.conversationId === prev.conversationId || c.id === prev.id
+          );
+          return found || allContacts[0];
         });
       }
+
       setError('');
     } catch (err) {
       setError(err.message || 'Unable to load authorized conversations.');
@@ -38,12 +92,12 @@ export default function MessagesPage() {
   };
 
   useEffect(() => {
-    fetchMessages();
+    fetchMessagesAndContacts();
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, activeContact]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -59,13 +113,17 @@ export default function MessagesPage() {
         content: text.trim()
       });
       setText('');
-      fetchMessages();
+      await fetchMessagesAndContacts();
     } catch (err) {
       setError(err.message || 'Unable to send message.');
     } finally {
       setSending(false);
     }
   };
+
+  const activeMessages = activeContact
+    ? messages.filter((m) => m.conversationId === activeContact.conversationId)
+    : messages;
 
   return (
     <div className="space-y-6">
@@ -76,7 +134,7 @@ export default function MessagesPage() {
           <h1 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">Direct Messaging</h1>
         </div>
         <p className="text-xs text-[#777777] mt-1">
-          Coordinate technical evaluations and communication directly with Latin American candidates.
+          Coordinate technical evaluations and communication directly between hiring teams and Latin American candidates.
         </p>
       </div>
 
@@ -88,26 +146,49 @@ export default function MessagesPage() {
           </div>
           <button
             type="button"
-            onClick={fetchMessages}
+            onClick={fetchMessagesAndContacts}
             className="px-3 py-1 rounded-lg bg-[#202020] border border-[#303030] text-xs text-[#F5F5F5] hover:bg-[#282828] shrink-0"
           >
             Retry Connection
           </button>
         </div>
       )}
+
       {/* Main Messaging Interface */}
       <div className="bg-[#171717] border border-[#303030] rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[550px]">
         {/* Left Contacts Column */}
         <div className="md:col-span-4 border-r border-[#303030] p-4 bg-[#101010]">
           <span className="text-[10px] font-mono uppercase tracking-wider text-[#777777] block mb-3 px-2">
-            Active Candidates
+            {user?.role === 'candidate' ? 'Hiring Organizations' : 'Active Candidates'}
           </span>
 
           <div className="space-y-1.5">
-            {activeContact ? <div className="p-3 rounded-2xl bg-[#202020] border border-[#303030] flex items-center gap-3 cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-[#171717] border border-[#303030] flex items-center justify-center text-xs text-[#A3A3A3]">{activeContact.name.slice(0, 1)}</div>
-              <div className="overflow-hidden"><p className="text-xs font-bold text-[#F5F5F5] truncate">{activeContact.name}</p><p className="text-[10px] text-[#777777] truncate">Persisted conversation</p></div>
-            </div> : <p className="px-2 py-8 text-center text-xs text-[#777777]">No authorized conversations yet.</p>}
+            {contacts.length > 0 ? (
+              contacts.map((contact) => {
+                const isSelected = activeContact?.id === contact.id || activeContact?.conversationId === contact.conversationId;
+                return (
+                  <div
+                    key={contact.conversationId || contact.id}
+                    onClick={() => setActiveContact(contact)}
+                    className={`p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'bg-[#202020] border-[#505050]'
+                        : 'bg-[#151515] border-[#252525] hover:bg-[#1a1a1a] hover:border-[#353535]'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-[#171717] border border-[#303030] flex items-center justify-center text-xs font-semibold text-[#A3A3A3]">
+                      {contact.name.slice(0, 1)}
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="text-xs font-bold text-[#F5F5F5] truncate">{contact.name}</p>
+                      <p className="text-[10px] text-[#777777] truncate">{contact.subtitle || 'Authorized chat'}</p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="px-2 py-8 text-center text-xs text-[#777777]">No authorized conversations yet.</p>
+            )}
           </div>
         </div>
 
@@ -116,10 +197,14 @@ export default function MessagesPage() {
           {/* Active Chat Header */}
           <div className="px-6 py-4 border-b border-[#303030] flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#202020] border border-[#303030] flex items-center justify-center text-xs text-[#A3A3A3]">{activeContact?.name?.slice(0, 1) || '?'}</div>
+              <div className="w-9 h-9 rounded-xl bg-[#202020] border border-[#303030] flex items-center justify-center text-xs text-[#A3A3A3]">
+                {activeContact?.name?.slice(0, 1) || '?'}
+              </div>
               <div>
                 <h3 className="text-xs font-bold text-[#F5F5F5]">{activeContact?.name || 'No conversation selected'}</h3>
-                <p className="text-[10px] text-[#777777]">{activeContact ? 'Authorized conversation' : 'Select a conversation to begin'}</p>
+                <p className="text-[10px] text-[#777777]">
+                  {activeContact ? (activeContact.subtitle || 'Authorized conversation') : 'Select a conversation to begin'}
+                </p>
               </div>
             </div>
             <span className="text-[10px] text-[#10B981] font-mono px-2 py-0.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/20">
@@ -136,19 +221,19 @@ export default function MessagesPage() {
                 <p>{error}</p>
                 <button
                   type="button"
-                  onClick={fetchMessages}
+                  onClick={fetchMessagesAndContacts}
                   className="px-3 py-1 rounded-lg bg-[#202020] border border-[#303030] text-xs text-[#F5F5F5] hover:bg-[#282828]"
                 >
                   Retry Connection
                 </button>
               </div>
-            ) : messages.length === 0 ? (
+            ) : activeMessages.length === 0 ? (
               <div className="text-center text-xs text-[#777777] py-12">
                 No conversation history yet. Send a greeting to initiate the technical sync.
               </div>
             ) : (
-              messages.map((m) => {
-                const isMe = m.senderRole === 'company' || m.senderId === user?._id;
+              activeMessages.map((m) => {
+                const isMe = m.senderId === user?._id || (user?.role === 'company' && m.senderRole === 'company');
                 return (
                   <div key={m._id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                     <span className="text-[10px] text-[#777777] mb-1 px-1">

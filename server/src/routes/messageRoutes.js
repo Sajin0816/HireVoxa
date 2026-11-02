@@ -43,7 +43,7 @@ router.post('/', protect, async (req, res, next) => {
     const senderId = req.user.id;
     const senderRole = req.user.role || 'company';
     const senderName = req.user.name || 'Member';
-    const companyId = req.user.companyId || req.user.id;
+    const companyId = req.user.role === 'company' ? (req.user.companyId || req.user.id) : (req.body.companyId || req.body.recipientId);
 
     const {
       conversationId,

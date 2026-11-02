@@ -47,7 +47,7 @@ function safeJob(job) {
 function safeApplication(application, job = null, candidateSummary = null, isCompanyView = false, interviews = []) {
   const value = application?.toObject ? application.toObject() : { ...application };
   delete value.__v;
-  delete value.candidateUserId;
+  if (!isCompanyView) delete value.candidateUserId;
 
   // Never expose internal notes or company-only history notes to candidates
   if (!isCompanyView) {
@@ -218,6 +218,7 @@ export async function listApplications(req, res, next) {
         if (cand) {
           candidateSummary = {
             id: cand._id,
+            userId: cand.userId,
             name: cand.name,
             title: cand.title,
             skills: cand.skills || [],

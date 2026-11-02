@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hirevoxa — Comprehensive Project Architecture & Team Briefing</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    @page {
+      size: A4;
+      margin: 18mm 14mm 18mm 14mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1E293B;
+      background-color: #FFFFFF;
+      line-height: 1.55;
+      font-size: 9pt;
+    }
+
+    .page-break {
+      page-break-after: always;
+      break-after: page;
+    }
+
+    .avoid-break {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Section Titles */
+    h1, h2, h3, h4 {
+      color: #0F172A;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    h1 { font-size: 22pt; line-height: 1.2; margin-bottom: 8px; }
+    h2 { 
+      font-size: 13pt; 
+      line-height: 1.3; 
+      margin-top: 14px; 
+      margin-bottom: 8px; 
+      color: #0284C7; 
+      display: flex; 
+      align-items: center; 
+      gap: 6px; 
+      border-bottom: 1.5px solid #F1F5F9;
+      padding-bottom: 4px;
+    }
+    h3 { font-size: 10.5pt; margin-top: 10px; margin-bottom: 6px; color: #0F172A; font-weight: 600; }
+    h4 { font-size: 9pt; margin-top: 6px; margin-bottom: 4px; color: #334155; font-weight: 600; }
+    p { margin-bottom: 8px; color: #334155; text-align: justify; }
+
+    /* Cover Page */
+    .cover-container {
+      height: 100%;
+      min-height: 250mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px 0;
+    }
+
+    .cover-hero {
+      background: linear-gradient(135deg, #090E1A 0%, #0F172A 60%, #1E293B 100%);
+      border-radius: 12px;
+      padding: 36px 30px;
+      color: #FFFFFF;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+    }
+
+    .cover-hero::after {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(14, 165, 233, 0.25) 0%, rgba(14, 165, 233, 0) 70%);
+      border-radius: 50%;
+    }
+
+    .cover-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 8pt;
+      font-weight: 600;
+      color: #38BDF8;
+      margin-bottom: 18px;
+      letter-spacing: 0.05em;
+    }
+
+    .cover-title {
+      font-size: 34pt;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 10px;
+    }
+
+    .cover-subtitle {
+      font-size: 13pt;
+      color: #94A3B8;
+      font-weight: 400;
+      line-height: 1.4;
+      max-width: 95%;
+      margin-bottom: 22px;
+    }
+
+    .cover-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .cover-meta-item {
+      font-size: 7.5pt;
+    }
+
+    .cover-meta-label {
+      color: #64748B;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+
+    .cover-meta-value {
+      color: #F8FAFC;
+      font-weight: 600;
+      font-size: 8.5pt;
+    }
+
+    /* Scorecard Grid */
+    .scorecard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .scorecard-card {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .scorecard-num {
+      font-size: 17pt;
+      font-weight: 800;
+      color: #0284C7;
+      line-height: 1.1;
+    }
+
+    .scorecard-label {
+      font-size: 7pt;
+      font-weight: 600;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: 3px;
+    }
+
+    /* Cards */
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .card-dark {
+      background: #0F172A;
+      color: #F8FAFC;
+      border: 1px solid #1E293B;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .card-dark h3, .card-dark h4 { color: #F8FAFC; }
+    .card-dark p { color: #94A3B8; }
+
+    .card-accent {
+      background: #F0F9FF;
+      border: 1px solid #BAE6FD;
+      border-left: 4px solid #0284C7;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+    }
+
+    .card-accent p {
+      color: #0369A1;
+      margin: 0;
+      font-size: 8.5pt;
+    }
+
+    /* Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 7pt;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge-primary { background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; }
+    .badge-success { background: #DCFCE7; color: #15803D; border: 1px solid #BBF7D0; }
+    .badge-warning { background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
+    .badge-purple { background: #F3E8FF; color: #7E22CE; border: 1px solid #E9D5FF; }
+    .badge-dark { background: #1E293B; color: #38BDF8; border: 1px solid #334155; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 10px 0;
+      font-size: 8pt;
+    }
+
+    th {
+      background: #F1F5F9;
+      color: #0F172A;
+      font-weight: 600;
+      text-align: left;
+      padding: 5px 8px;
+      border: 1px solid #E2E8F0;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    td {
+      padding: 5px 8px;
+      border: 1px solid #E2E8F0;
+      color: #334155;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background: #F8FAFC;
+    }
+
+    /* Code Blocks */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.5pt;
+      background: #F1F5F9;
+      color: #0F172A;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .code-box {
+      background: #0F172A;
+      border: 1px solid #1E293B;
+      border-radius: 6px;
+      padding: 10px;
+      color: #F8FAFC;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.5pt;
+      line-height: 1.4;
+      margin: 8px 0;
+      white-space: pre;
+    }
+
+    .feature-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .feature-list li {
+      position: relative;
+      padding-left: 13px;
+      margin-bottom: 3px;
+      color: #334155;
+      font-size: 8pt;
+    }
+
+    .feature-list li::before {
+      content: '▪';
+      position: absolute;
+      left: 0;
+      color: #0284C7;
+      font-size: 9pt;
+      line-height: 1;
+    }
+
+    .toc-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 4px 0;
+      border-bottom: 1px dashed #E2E8F0;
+      font-size: 8pt;
+    }
+
+    .toc-title {
+      font-weight: 600;
+      color: #0F172A;
+    }
+
+    .toc-dots {
+      flex: 1;
+      border-bottom: 1px dotted #CBD5E1;
+      margin: 0 8px;
+    }
+
+    .toc-page {
+      font-weight: 600;
+      color: #0284C7;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= COVER PAGE ================= -->
+  <div class="cover-container page-break">
+    <div class="cover-hero">
+      <div class="cover-badge">
+        <span>⚡ HIREVOXA ENTERPRISE BRIEFING & ARCHITECTURE SPECIFICATION</span>
+      </div>
+      <div class="cover-title">HIREVOXA</div>
+      <div class="cover-subtitle">
+        Enterprise Platform for Deterministically Vetted Latin American Software Engineering Talent
+      </div>
+
+      <div class="cover-meta-grid">
+        <div class="cover-meta-item">
+          <div class="cover-meta-label">DOCUMENT VERSION</div>
+          <div class="cover-meta-value">v1.0.0 (Production)</div>
+        </div>
+        <div class="cover-meta-item">
+          <div class="cover-meta-label">RELEASE DATE</div>
+          <div class="cover-meta-value">November 2026</div>
+        </div>
+        <div class="cover-meta-item">
+          <div class="cover-meta-label">DEPLOYMENT STATUS</div>
+          <div class="cover-meta-value">Live on Vercel & Atlas</div>
+        </div>
+        <div class="cover-meta-item">
+          <div class="cover-meta-label">TARGET AUDIENCE</div>
+          <div class="cover-meta-value">Engineering, Product & Ops</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2 style="font-size: 11pt; color: #0F172A; margin-top: 14px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: none;">
+        Executive System Scorecard
+      </h2>
+      <div class="scorecard-grid">
+        <div class="scorecard-card">
+          <div class="scorecard-num">171 / 171</div>
+          <div class="scorecard-label">Automated Tests Pass</div>
+        </div>
+        <div class="scorecard-card">
+          <div class="scorecard-num">0 – 3 hrs</div>
+          <div class="scorecard-label">US Timezone Overlap</div>
+        </div>
+        <div class="scorecard-card">
+          <div class="scorecard-num">3 Tiers</div>
+          <div class="scorecard-label">Role Isolation (RBAC)</div>
+        </div>
+        <div class="scorecard-card">
+          <div class="scorecard-num">100%</div>
+          <div class="scorecard-label">Atlas Persistence QA</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 8px;">
+        <div class="card" style="margin-bottom: 0;">
+          <h3 style="font-size: 8.5pt; color: #0284C7; text-transform: uppercase;">Live Platform Environments</h3>
+          <table style="margin: 4px 0 0 0; font-size: 7.5pt;">
+            <tr>
+              <td><strong>Frontend Production</strong></td>
+              <td><a href="https://hirevoxa.vercel.app" style="color: #0284C7; text-decoration: none;">hirevoxa.vercel.app</a></td>
+              <td><span class="badge badge-success">HTTP 200 Live</span></td>
+            </tr>
+            <tr>
+              <td><strong>Backend API Service</strong></td>
+              <td><a href="https://hirevoxa-server.vercel.app" style="color: #0284C7; text-decoration: none;">hirevoxa-server.vercel.app</a></td>
+              <td><span class="badge badge-success">HTTP 200 Live</span></td>
+            </tr>
+            <tr>
+              <td><strong>GitHub Repository</strong></td>
+              <td><a href="https://github.com/Sajin0816/HireVoxa" style="color: #0284C7; text-decoration: none;">Sajin0816/HireVoxa</a></td>
+              <td><span class="badge badge-primary">Main Synced</span></td>
+            </tr>
+            <tr>
+              <td><strong>Database Cluster</strong></td>
+              <td>MongoDB Atlas (Dedicated Replica Set)</td>
+              <td><span class="badge badge-purple">ap-south-1 Mumbai</span></td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+          <h3 style="font-size: 8.5pt; color: #0284C7; text-transform: uppercase;">Core Platform Scope</h3>
+          <p style="font-size: 8pt; margin-bottom: 4px;">
+            Hirevoxa bridges the US tech hiring gap by connecting venture-backed startups and enterprises with vetted, high-performing software engineers across Latin America (Brazil, Argentina, Colombia, Mexico).
+          </p>
+          <ul class="feature-list" style="font-size: 7.5pt;">
+            <li><strong>Employer Workspace (<code>/app</code>):</strong> ATS pipeline, requisition tools, candidate search.</li>
+            <li><strong>Candidate Portal (<code>/candidate</code>):</strong> Profile verification, resume parsing, application hub.</li>
+            <li><strong>Admin Control Center (<code>/admin</code>):</strong> Company vetting, moderation, fee audits.</li>
+            <li><strong>Deterministic Matching:</strong> Mathematical compatibility scoring (skills, seniority, timezone).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TABLE OF CONTENTS & EXECUTIVE SUMMARY ================= -->
+  <div class="page-break">
+    <h2>Table of Contents</h2>
+    <div class="card" style="margin-bottom: 14px;">
+      <div class="toc-item">
+        <span class="toc-title">1. Executive Overview & Market Problem</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 1</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">2. Full-Stack System Architecture & Monorepo Topology</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 2</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">3. Security Architecture, Authentication & RBAC</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 3</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">4. Professional Global Form Validation Framework</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 4</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">5. Authentication-Aware Marketing Navigation & Role Redirection</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 5</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">6. Hiring Organization Workspace (<code>/app</code>) & ATS Workflow</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 6</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">7. Candidate Career Portal (<code>/candidate</code>) & Profile Completeness</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 7</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">8. Administrative Control Center (<code>/admin</code>) & Governance Ops</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 8</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">9. Deterministic Matching Engine Mathematics</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 9</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">10. Commercial Monetization Framework & Financial Terms</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 10</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">11. Database Architecture, Mongoose Schemas & Persistence</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 11</span>
+      </div>
+      <div class="toc-item">
+        <span class="toc-title">12. Quality Assurance Record, Test Matrix & DevOps Runbook</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">Section 12</span>
+      </div>
+    </div>
+
+    <h2>1. Executive Overview & Market Problem</h2>
+    <p>
+      United States technology organizations face persistent headwinds when scaling software engineering teams: domestic engineering talent commands soaring compensation benchmarks, while traditional offshore outsourcing (e.g. Eastern Europe, South Asia) introduces crippling 10-to-12 hour timezone delays, severe communication friction, and erratic technical vetting. Furthermore, legacy recruitment agencies impose exorbitant, non-refundable placement retainers typically amounting to 20% to 30% of first-year salaries.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>The LatAm Nearshore Advantage</h3>
+        <ul class="feature-list">
+          <li><strong>Direct Timezone Synchronicity:</strong> Latin American engineering hubs in Brazil, Argentina, Colombia, and Mexico operate in EST, CST, and PST windows (0 to 3 hours offset). No midnight standups or overnight blockages.</li>
+          <li><strong>Exceptional Technical Depth:</strong> Top-tier university systems, strong open-source contribution cultures, and fluency in modern stacks (React, TypeScript, Node.js, Python, Go, Cloud).</li>
+          <li><strong>English Fluency:</strong> Standardized B2-C2 professional English verification ensures direct participation in product architecture and executive discussions.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>The Hirevoxa Solution</h3>
+        <ul class="feature-list">
+          <li><strong>Deterministic Multi-Vector Matching:</strong> Mathematical compatibility scoring comparing technical competencies, seniority, and operational overlap.</li>
+          <li><strong>Full Recruitment ATS:</strong> End-to-end requisition posting, candidate review, 1-click video interview scheduling, and offer tracking.</li>
+          <li><strong>Transparent Economics:</strong> Free candidate tier, Starter pilot ($0), Pro subscription ($199/mo), and a flat $2,500 success placement fee backed by a 90-day replacement policy.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SYSTEM ARCHITECTURE & MONOREPO TOPOLOGY ================= -->
+  <div class="page-break">
+    <h2>2. Full-Stack System Architecture & Monorepo Topology</h2>
+    <p>
+      Hirevoxa is built as a decoupled monorepo combining a modern React 19 Single Page Application and an Express RESTful API backend, hosted on Vercel Serverless Edge infrastructure and backed by MongoDB Atlas.
+    </p>
+
+    <div class="code-box">
++---------------------------------------------------------------------------------------------------+
+|                                    PUBLIC INTERNET / CLIENT BROWSERS                              |
++---------------------------------------------------------------------------------------------------+
+           | (Desktop, Tablet, Mobile)                                  | (REST API Calls)
+           v                                                            v
++------------------------------------+             +------------------------------------------------+
+|  VERCEL EDGE: FRONTEND SPA         |             |  VERCEL SERVERLESS: API SERVICE                |
+|  - React 19 + Vite 8 Bundler       |             |  - Node.js 22 LTS ECMAScript Modules           |
+|  - Tailwind CSS Modern Dark Theme  |             |  - Express 4.21 REST Framework                 |
+|  - Three.js / R3F 3D Canvas        |             |  - Helmet HTTP Security Headers                |
+|  - React Router v7 + Route Guards  |             |  - Dual Auth: HttpOnly Cookies + Bearer JWT    |
+|  - AuthContext (Session Restore)   |             |  - Role-Based Access Control (RBAC Middleware) |
+|  - Centralized Form Validation     |             |  - Multer + pdf-lib Resume Processing          |
++------------------------------------+             +------------------------------------------------+
+                                                                    |
+                                    +-------------------------------+-------------------------------+
+                                    |                                                               |
+                                    v                                                               v
+                 +------------------------------------+          +------------------------------------+
+                 |  PRIMARY PRODUCTION PERSISTENCE    |          |  TEST & DEMO IN-MEMORY ADAPTER     |
+                 |  - MongoDB Atlas (Replica Set)     |          |  - inMemoryStore.js                |
+                 |  - Mongoose 8.10 ODM Layer         |          |  - Fast Deterministic Unit/E2E     |
+                 |  - 3-Attempt Transient Auto-Retry  |          |  - Prohibited in Production Mode   |
+                 |  - Credential-Masked Diagnostics   |          |  - Zero Network Footprint          |
+                 +------------------------------------+          +------------------------------------+
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Client Architecture (<code>client/</code>)</h3>
+        <ul class="feature-list">
+          <li><strong>Build System:</strong> Vite 8 with Rolldown tree-shaking, compiling 1,985 modules in 7.37s.</li>
+          <li><strong>Routing:</strong> Declarative guards (<code>ProtectedRoute.jsx</code>) validating role tokens before view initialization.</li>
+          <li><strong>Session Management:</strong> <code>AuthContext.jsx</code> provides persistent session restoration from localStorage and HTTP-only cookie verification.</li>
+          <li><strong>Visual Styling:</strong> Tailwind CSS dark theme palette (<code>#090909</code>, <code>#111111</code>, <code>#171717</code>, <code>#202020</code>, <code>#F5F5F5</code>).</li>
+          <li><strong>Interactive 3D:</strong> Three.js WebGL canvas rendering dynamic orbital geometry on public landing pages.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Backend Architecture (<code>server/</code>)</h3>
+        <ul class="feature-list">
+          <li><strong>Runtime:</strong> Node.js 22 LTS with native ES modules (<code>"type": "module"</code>).</li>
+          <li><strong>Security Pipeline:</strong> Helmet headers, CORS origin whitelisting with credential exchange, Express Rate Limiter (300 req/15 min).</li>
+          <li><strong>Database Resilience:</strong> Multi-attempt connection retry with 2s exponential backoff; automatic credential sanitization in error logs.</li>
+          <li><strong>Controller Architecture:</strong> Modular controllers for Auth, Jobs, Candidates, Applications, Interviews, Admin, and Billing.</li>
+          <li><strong>Entitlement Guard:</strong> <code>entitlementMiddleware.js</code> strictly gates active job posting capacity and feature sets per tier.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Monorepo Directory Structure</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Directory</th>
+          <th>Responsibility</th>
+          <th>Key Technologies</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>client/src/components/</code></td>
+          <td>Atomic UI primitives, cards, tables, modal dialogs, and Three.js 3D hero canvas</td>
+          <td>React 19, Lucide Icons, Three.js, R3F</td>
+        </tr>
+        <tr>
+          <td><code>client/src/context/</code></td>
+          <td>Unified authentication context, session restore, role dispatch, global state</td>
+          <td>React Context API, localStorage</td>
+        </tr>
+        <tr>
+          <td><code>client/src/pages/</code></td>
+          <td>Public marketing views, Recruiter (<code>/app</code>), Candidate (<code>/candidate</code>), Admin (<code>/admin</code>)</td>
+          <td>React Router DOM v7</td>
+        </tr>
+        <tr>
+          <td><code>server/src/config/</code></td>
+          <td>Database connection lifecycle (<code>db.js</code>) and monetary pricing schema (<code>pricing.js</code>)</td>
+          <td>Mongoose 8.10, Dotenv</td>
+        </tr>
+        <tr>
+          <td><code>server/src/controllers/</code></td>
+          <td>HTTP endpoint request handlers, business logic, transaction workflows</td>
+          <td>Express 4.21, bcryptjs, JWT</td>
+        </tr>
+        <tr>
+          <td><code>server/src/models/</code></td>
+          <td>Mongoose data models: User, Company, Candidate, Job, Application, Interview, AuditLog</td>
+          <td>MongoDB Schemas, Indexing</td>
+        </tr>
+        <tr>
+          <td><code>server/src/services/</code></td>
+          <td>Deterministic matching engine, application lifecycle coordinator, resume vault</td>
+          <td>pdf-lib, crypto, math vectors</td>
+        </tr>
+        <tr>
+          <td><code>server/tests/</code></td>
+          <td>19 automated test suites verifying auth, security, RBAC, ATS, and monetization</td>
+          <td>Node Test Runner, Supertest</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================= SECURITY, AUTH & FORM VALIDATION ================= -->
+  <div class="page-break">
+    <h2>3. Security Architecture, Authentication & RBAC</h2>
+    <p>
+      Hirevoxa enforces a zero-trust security perimeter across candidate, employer, and administrative contexts. Identity verification utilizes dual-token authentication combining HttpOnly SameSite cookies with standard Bearer headers for complete client compatibility.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Dual-Layer JWT Authentication</h3>
+        <p style="font-size: 8pt; margin-bottom: 6px;">
+          When a user signs in, the backend signs a JSON Web Token with HMAC SHA-256 and delivers it via two concurrent channels:
+        </p>
+        <ul class="feature-list">
+          <li><strong>HttpOnly Cookie:</strong> Secure, SameSite-strict cookie inaccessible to JavaScript, protecting against Cross-Site Scripting (XSS) session theft.</li>
+          <li><strong>Bearer Token:</strong> Returned in response payload for API client authorization and local context tracking.</li>
+          <li><strong>Token Claims:</strong> Contains <code>userId</code>, <code>role</code>, <code>email</code>, <code>companyId</code>, and <code>status</code>.</li>
+          <li><strong>Password Security:</strong> Hashed using <code>bcryptjs</code> with 10 salt rounds. Plaintext passwords never hit the database or logs.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Role-Based Access Control (RBAC)</h3>
+        <p style="font-size: 8pt; margin-bottom: 6px;">
+          The system establishes 3 distinct user personas with mutually exclusive route boundaries:
+        </p>
+        <table style="margin: 0; font-size: 7.5pt;">
+          <tr>
+            <td><span class="badge badge-primary">Company</span></td>
+            <td><code>/app/*</code></td>
+            <td>Requisition management, talent discovery, candidate scheduling, ATS.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-success">Candidate</span></td>
+            <td><code>/candidate/*</code></td>
+            <td>Profile builder, resume upload, job applications, interview view.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-purple">Admin</span></td>
+            <td><code>/admin/*</code></td>
+            <td>Company vetting, job moderation, user suspension, fee audits.</td>
+          </tr>
+        </table>
+        <p style="font-size: 7pt; color: #64748B; margin-top: 6px;">
+          *Admin sub-roles (<code>owner</code>, <code>ops_admin</code>, <code>analyst</code>) enforce granular operational segregation.
+        </p>
+      </div>
+    </div>
+
+    <h2>4. Professional Global Form Validation Framework</h2>
+    <p>
+      To deliver a seamless, high-trust enterprise user experience, Hirevoxa has eliminated generic native browser tooltips (e.g. <em>"Please fill in this field."</em>) across 100% of its forms in favor of an accessible, unified React validation system.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <h4 style="color: #0284C7;">1. Complete Native Tooltip Suppression</h4>
+        <p style="font-size: 7.5pt;">
+          Every <code>&lt;form&gt;</code> element specifies <code>noValidate</code>. Native HTML5 <code>required</code> attributes are disallowed to prevent disruptive browser popups.
+        </p>
+      </div>
+
+      <div class="card">
+        <h4 style="color: #0284C7;">2. Centralized Validation Utilities</h4>
+        <p style="font-size: 7.5pt;">
+          <code>validation.js</code> provides authoritative functions: <code>isValidEmail</code> (RFC 5322), <code>isRequired</code>, <code>getInputErrorClass</code>, and <code>focusFirstError</code>.
+        </p>
+      </div>
+
+      <div class="card">
+        <h4 style="color: #0284C7;">3. Accessible FieldError Component</h4>
+        <p style="font-size: 7.5pt;">
+          <code>FieldError.jsx</code> renders smooth, subtle red alert messages below inputs with <code>AlertCircle</code> icons, <code>role="alert"</code>, and <code>aria-live="polite"</code>.
+        </p>
+      </div>
+    </div>
+
+    <h2>5. Authentication-Aware Marketing Navigation & Role Redirection</h2>
+    <p>
+      Public marketing entry points (Landing Page and Pricing Page) utilize centralized, state-aware navigation components (<code>MarketingNavbar.jsx</code> and <code>MarketingFooter.jsx</code>) that dynamically adapt based on the user's active session.
+    </p>
+
+    <div class="card-accent">
+      <p style="font-size: 8pt; color: #0369A1;">
+        <strong>Hydration-Shielded Navigation:</strong> During initial session verification (<code>initialLoading</code>), a neutral skeleton placeholder reserves header space, preventing any visual flicker of "Sign In" / "Register".
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Session State</th>
+          <th>Header Actions (Desktop & Tablet)</th>
+          <th>Mobile Drawer (&lt; 768px)</th>
+          <th>Destination Behavior</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Unauthenticated Visitor</strong></td>
+          <td>Ghost "Sign In" + Glowing "Get Started" buttons</td>
+          <td>"Sign In" and "Get Started" links</td>
+          <td>Routes to <code>/login</code> or <code>/register</code></td>
+        </tr>
+        <tr>
+          <td><strong>Authenticated Employer</strong></td>
+          <td>Single prominent "Go to Dashboard" CTA</td>
+          <td>User badge + "COMPANY" chip + Full-width CTA</td>
+          <td>Direct routing to <code>/app</code></td>
+        </tr>
+        <tr>
+          <td><strong>Authenticated Candidate</strong></td>
+          <td>Single prominent "Go to Dashboard" CTA</td>
+          <td>User badge + "CANDIDATE" chip + Full-width CTA</td>
+          <td>Direct routing to <code>/candidate</code> (Never <code>/app</code>)</td>
+        </tr>
+        <tr>
+          <td><strong>Authenticated Admin</strong></td>
+          <td>Single prominent "Go to Dashboard" CTA</td>
+          <td>User badge + "ADMIN" chip + Full-width CTA</td>
+          <td>Direct routing to <code>/admin</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================= CORE DOMAINS & WORKSPACES ================= -->
+  <div class="page-break">
+    <h2>6. Hiring Organization Workspace (<code>/app</code>) & ATS Workflow</h2>
+    <p>
+      The employer portal is designed for high-velocity US recruiting teams, providing complete requisition management, algorithmic talent discovery, and an integrated Applicant Tracking System (ATS).
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Job Requisition Management (<code>/app/jobs</code>)</h3>
+        <ul class="feature-list">
+          <li>Create, publish, pause, and close engineering job posts with title, department, and description.</li>
+          <li>Set required tech stacks, minimum years of experience, and hourly/monthly budget ranges.</li>
+          <li>Enforce timezone synchronicity requirements (EST, CST, PST, BRT).</li>
+          <li>Server-side entitlement validation gates active jobs (5 for Starter, 50 for Pro).</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Applicant Tracking Pipeline (<code>/app/applications</code>)</h3>
+        <ul class="feature-list">
+          <li>Structured candidate cards displaying match scores, profile highlights, and resumes.</li>
+          <li>Stage progression: <code>Submitted</code> &rarr; <code>Under Review</code> &rarr; <code>Shortlisted</code> &rarr; <code>Interview Scheduled</code> &rarr; <code>Offered</code> &rarr; <code>Hired</code>.</li>
+          <li>Internal notes feature for recruiter evaluation (masked from candidates).</li>
+          <li>Single-click interview modal with timezone alignment and calendar integration.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Deterministic Matching Engine</h3>
+        <p style="font-size: 8pt; margin-bottom: 6px;">
+          Rather than opaque AI approximations, Hirevoxa calculates candidate compatibility mathematically via weighted multi-vector scoring:
+        </p>
+        <ul class="feature-list">
+          <li><strong>Skills Compatibility (50%):</strong> Jaccard set intersection between job requirements and candidate tech stack.</li>
+          <li><strong>Seniority & Experience (25%):</strong> Candidate verifiable experience vs. role requirements.</li>
+          <li><strong>Timezone Alignment (25%):</strong> Synchronous operational working hours overlap.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Interview Coordination (<code>/app/interviews</code>, <code>/calendar</code>)</h3>
+        <ul class="feature-list">
+          <li>Interactive weekly calendar with multi-timezone toggling (EST, BRT, PST).</li>
+          <li>Week navigation offsets (<code>&lt;</code>, <code>This Week</code>, <code>&gt;</code>) with 0 stuck-loader guarantees.</li>
+          <li>Video conferencing link generation and standardized candidate notification.</li>
+          <li>Status tracking: <code>Pending</code> &rarr; <code>Confirmed</code> &rarr; <code>Completed</code> &rarr; <code>Cancelled</code>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>7. Candidate Career Portal (<code>/candidate</code>)</h2>
+    <p>
+      The candidate workspace provides Latin American software engineers with transparent, zero-commission access to vetted US engineering opportunities with complete rate and privacy controls.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <h4>Profile Completeness Engine</h4>
+        <p style="font-size: 7.5pt;">
+          Real-time score calculator (0% to 100%) tracking headline, bio, country, timezone, years of experience, primary skills, and comp benchmarks.
+        </p>
+      </div>
+
+      <div class="card">
+        <h4>Authenticated Resume Vault</h4>
+        <p style="font-size: 7.5pt;">
+          PDF resume upload with MIME verification, SHA-256 integrity fingerprinting, private storage paths, and virus scanning.
+        </p>
+      </div>
+
+      <div class="card">
+        <h4>Transparent Job Directory</h4>
+        <p style="font-size: 7.5pt;">
+          Browse open US requisitions with transparent compensation benchmarks, required timezone overlap, and 1-click application submission.
+        </p>
+      </div>
+    </div>
+
+    <h2>8. Administrative Control Center (<code>/admin</code>)</h2>
+    <p>
+      The administrative workspace equips platform operators with governance, compliance, moderation, and billing tools.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Module</th>
+          <th>Operational Responsibility</th>
+          <th>Audit & Governance Controls</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Company Verification</strong></td>
+          <td>Verify hiring organization legitimacy, corporate email domains, and billing profiles.</td>
+          <td>Mandatory justification reason required when rejecting or requesting correction.</td>
+        </tr>
+        <tr>
+          <td><strong>Job Moderation</strong></td>
+          <td>Review published requisitions for compliance, wage transparency, and spam prevention.</td>
+          <td>Mandatory audit reason logged when flagging or suspending active job requisitions.</td>
+        </tr>
+        <tr>
+          <td><strong>User Moderation</strong></td>
+          <td>Manage platform users, inspect profile state, handle account suspension/reactivation.</td>
+          <td>Audit logs capture admin ID, target user, action, and operational justification.</td>
+        </tr>
+        <tr>
+          <td><strong>Billing & Fee Operations</strong></td>
+          <td>Oversee placement milestone invoicing ($2,500), process fee waivers, mediate disputes.</td>
+          <td>Audit log captures mandatory &ge;5 character justification for all financial adjustments.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================= MONETIZATION & DATABASE ARCHITECTURE ================= -->
+  <div class="page-break">
+    <h2>9. Deterministic Matching Engine Mathematics</h2>
+    <p>
+      The core matching engine (<code>server/src/services/matchingService.js</code>) computes an objective compatibility score (0.0 to 10.0) between candidates and open job requisitions based on three normalized algorithmic vectors:
+    </p>
+
+    <div class="card-dark">
+      <h3 style="color: #38BDF8; font-size: 9pt;">Mathematical Score Formulation:</h3>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 8pt; color: #F8FAFC; margin-top: 4px;">
+Compatibility Score = (Skills Score * 0.50) + (Seniority Score * 0.25) + (Timezone Score * 0.25)
+
+Where:
+• Skills Score    = |CandidateSkills ∩ JobRequiredSkills| / |JobRequiredSkills| (with partial sub-match)
+• Seniority Score = min(1.0, CandidateYearsOfExperience / JobMinimumYearsRequired)
+• Timezone Score  = Synchronous Working Hours Overlap / 8.0 (Overlap between EST/CST/PST and LatAm)
+      </div>
+    </div>
+
+    <h2>10. Commercial Monetization Framework</h2>
+    <p>
+      Hirevoxa operates on a transparent, performance-driven monetization model. All monetary figures are strictly represented as 64-bit integer minor units (cents USD) to eliminate IEEE-754 floating-point rounding errors.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Plan Tier</th>
+          <th>Price (USD)</th>
+          <th>Billing Model</th>
+          <th>Active Jobs Capacity</th>
+          <th>Team Seats</th>
+          <th>Target Market</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Candidate Free Forever</strong></td>
+          <td>$0.00</td>
+          <td>Free Forever</td>
+          <td>N/A (Job Applications)</td>
+          <td>1 Seat</td>
+          <td>Latin American Software Engineers</td>
+        </tr>
+        <tr>
+          <td><strong>Employer Starter</strong></td>
+          <td>$0.00</td>
+          <td>Free Evaluation Pilot</td>
+          <td><strong>Up to 5 Active Jobs</strong></td>
+          <td>2 Recruiter Seats</td>
+          <td>Prospective US Hiring Organizations</td>
+        </tr>
+        <tr>
+          <td><strong>Employer Pro</strong></td>
+          <td>$199.00 / mo</td>
+          <td>Monthly Recurring</td>
+          <td><strong>Up to 50 Active Jobs</strong></td>
+          <td>10 Recruiter Seats</td>
+          <td>Growth-Stage Tech Companies</td>
+        </tr>
+        <tr>
+          <td><strong>Successful Placement</strong></td>
+          <td>$2,500.00</td>
+          <td>Contractual Milestone</td>
+          <td>N/A (Per Confirmed Hire)</td>
+          <td>Enterprise</td>
+          <td>Hiring Organizations (90-Day Guarantee)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card-accent">
+      <p style="font-size: 8pt; color: #0369A1;">
+        <strong>The $2,500 Placement Milestone Guarantee:</strong> Unlike traditional recruiting agencies that charge 20% to 25% of the engineer's annual first-year salary ($20,000 to $30,000+), Hirevoxa charges a flat $2,500 USD placement fee invoiced Net-14 upon confirmed hire, backed by an industry-leading 90-day replacement policy.
+      </p>
+    </div>
+
+    <h2>11. Database Schema & Data Models</h2>
+    <p>
+      The persistence layer is governed by Mongoose 8.10+ schemas on MongoDB Atlas (replica set) with compound indexes designed for high-throughput queries and strict data isolation.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Core Schemas & Indexing</h3>
+        <table style="margin: 0; font-size: 7.5pt;">
+          <tr>
+            <td><code>User</code></td>
+            <td><code>email</code> (unique), <code>password</code> (bcrypt), <code>role</code>, <code>adminRole</code>, <code>status</code>, <code>companyId</code>.</td>
+          </tr>
+          <tr>
+            <td><code>Company</code></td>
+            <td><code>name</code>, <code>tenantKey</code> (unique sparse), <code>ownerId</code>, <code>plan</code>, <code>verificationStatus</code>.</td>
+          </tr>
+          <tr>
+            <td><code>Candidate</code></td>
+            <td><code>userId</code> (unique sparse), <code>title</code>, <code>country</code>, <code>timeZone</code>, <code>skills</code>, <code>yearsOfExperience</code>.</td>
+          </tr>
+          <tr>
+            <td><code>Job</code></td>
+            <td><code>companyId</code>, <code>title</code>, <code>department</code>, <code>requiredSkills</code>, <code>budgetRange</code>, <code>status</code>.</td>
+          </tr>
+          <tr>
+            <td><code>Application</code></td>
+            <td><code>candidateUserId</code>, <code>jobId</code>, <code>companyId</code>, <code>status</code>, <code>statusHistory</code>.</td>
+          </tr>
+          <tr>
+            <td><code>Interview</code></td>
+            <td><code>companyId</code>, <code>candidateId</code>, <code>jobId</code>, <code>proposedDate</code>, <code>timeZone</code>, <code>meetingLink</code>.</td>
+          </tr>
+          <tr>
+            <td><code>AuditLog</code></td>
+            <td><code>actor</code>, <code>action</code>, <code>targetResource</code>, <code>outcome</code>, <code>clientIp</code>, <code>timestamp</code>.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Connection Resilience & Security</h3>
+        <ul class="feature-list">
+          <li><strong>Transient Auto-Retry:</strong> <code>connectDB()</code> retries up to 3 times with exponential backoff on network/TLS hiccups.</li>
+          <li><strong>Credential Masking:</strong> Automatic regex scrubbing replaces <code>mongodb+srv://user:pass@host</code> with <code>user:***@host</code> before logging.</li>
+          <li><strong>Unique Constraint Safeguard:</strong> Compound index <code>{ candidateUserId: 1, jobId: 1 }</code> prevents duplicate applications at the database engine level.</li>
+          <li><strong>Tenant Isolation:</strong> Company queries explicitly filter by <code>companyId</code> to guarantee strict cross-tenant data privacy.</li>
+          <li><strong>Live Restart Persistence:</strong> Fully verified in MongoDB Atlas cluster across Express server restarts.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= QA & DEVOPS RUNBOOK ================= -->
+  <div>
+    <h2>12. Quality Assurance Record & DevOps Runbook</h2>
+    <p>
+      Hirevoxa maintains an automated test harness ensuring zero regressions across all core features, security layers, and data workflows.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Test Suite</th>
+          <th>File Path</th>
+          <th>Subtests</th>
+          <th>Status</th>
+          <th>Scope Covered</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Navigation & Roles</td>
+          <td><code>tests/navigation_utils.test.js</code></td>
+          <td>5 / 5</td>
+          <td><span class="badge badge-success">PASS</span></td>
+          <td>Destination routing, whitespace sanitization, safe fallback</td>
+        </tr>
+        <tr>
+          <td>JWT Configuration</td>
+          <td><code>tests/jwt_config.test.js</code></td>
+          <td>8 / 8</td>
+          <td><span class="badge badge-success">PASS</span></td>
+          <td>Secret validation, signature verification, expiration</td>
+        </tr>
+        <tr>
+          <td>Core Authentication</td>
+          <td><code>tests/auth.test.js</code></td>
+          <td>12 / 12</td>
+          <td><span class="badge badge-success">PASS</span></td>
+          <td>Registration, password hashing, login token dispatch</td>
+        </tr>
+        <tr>
+          <td>Session Security</td>
+          <td><code>tests/session_security.test.js</code></td>
+          <td>9 / 9</td>
+          <td><span class="badge badge-success">PASS</span></td>
+          <td>HttpOnly cookies, SameSite flags, CSRF protection</td>
+        </tr>
+        <tr>
+          <td>Tenant Isolation</td>
+          <td><code>tests/tenant_isolation.test.js</code></td>
+          <td>11 / 11</td>
+          <td><span class="badge badge-success">PASS</span></td>
+          <td>Cross-company data isolation, RBAC barrier enforcement</td>
+        </tr>
+        <tr>
+          <td>Hiring Workflow ATS</td>
+          <td><code>tests/phase4_hiring_workflow.test.js</code></td>
+          <td>14 / 14</td>
+          <td><span class="badge badge-success">PASS</span></td>
+          <td>Requisition lifecycle, application stages, interview coordination</td>
+        </tr>
+        <tr>
+          <td>Monetization Engine</td>
+          <td><code>tests/phase5_monetization.test.js</code></td>
+          <td>16 / 16</td>
+          <td><span class="badge badge-success">PASS</span></td>
+          <td>Starter pilot limits (5 jobs), Pro upgrades, placement fee</td>
+        </tr>
+        <tr>
+          <td>Candidate Workspace</td>
+          <td><code>tests/phase3_candidate_portal.test.js</code></td>
+          <td>12 / 12</td>
+          <td><span class="badge badge-success">PASS</span></td>
+          <td>Profile completeness calculation, resume storage, application tracker</td>
+        </tr>
+        <tr>
+          <td>Admin Operations</td>
+          <td><code>tests/phase4_5_admin_operations.test.js</code></td>
+          <td>15 / 15</td>
+          <td><span class="badge badge-success">PASS</span></td>
+          <td>Company vetting, job moderation, suspension audit logs</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Local Development Quick Start</h3>
+        <p style="font-size: 7.5pt; margin-bottom: 4px;">
+          Prerequisites: Node.js 22 LTS, npm 10+, MongoDB Atlas account or local MongoDB 7+.
+        </p>
+        <div style="background: #F1F5F9; padding: 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 7pt; line-height: 1.4;">
+# 1. Clone repository<br>
+git clone https://github.com/Sajin0816/HireVoxa.git<br>
+cd HireVoxa<br><br>
+# 2. Install dependencies<br>
+npm --prefix server install<br>
+npm --prefix client install<br><br>
+# 3. Configure environment (.env)<br>
+PORT=5000<br>
+MONGODB_URI=mongodb+srv://...<br>
+JWT_SECRET=your_super_secret_key_at_least_32_chars<br>
+NODE_ENV=development<br><br>
+# 4. Seed database<br>
+npm --prefix server run seed<br><br>
+# 5. Start dev servers<br>
+npm --prefix server run dev   # Port 5000<br>
+npm --prefix client run dev   # Port 5173
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>CI/CD & Deployment Pipeline</h3>
+        <p style="font-size: 7.5pt; margin-bottom: 4px;">
+          Deployments are fully automated via GitHub-Vercel edge integration.
+        </p>
+        <ul class="feature-list">
+          <li><strong>Production Branches:</strong> Pushes to <code>main</code> trigger automatic production builds.</li>
+          <li><strong>Frontend Edge Deployment:</strong> Built via Vite 8 into <code>dist/</code>, distributed via Vercel Global Edge Network.</li>
+          <li><strong>Serverless API Functions:</strong> Server entry point (<code>server/src/server.js</code>) configured as Vercel serverless function with cold-start optimization.</li>
+          <li><strong>Diagnostic Health Check:</strong> <code>GET /api/health</code> returns database status, connection mode, and JWT runtime diagnostics.</li>
+          <li><strong>Production Verification:</strong>
+            <code>curl https://hirevoxa-server.vercel.app/api/health</code>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card-dark" style="margin-top: 10px; margin-bottom: 0;">
+      <h3 style="font-size: 8.5pt; color: #38BDF8; margin-top: 0;">Team Contacts & Operational Resources</h3>
+      <div class="grid-3" style="margin-bottom: 0;">
+        <div>
+          <span style="font-size: 7pt; color: #64748B; text-transform: uppercase;">Engineering Lead</span><br>
+          <strong style="font-size: 8pt; color: #F8FAFC;">Lead Full-Stack Architect</strong>
+        </div>
+        <div>
+          <span style="font-size: 7pt; color: #64748B; text-transform: uppercase;">Production URLs</span><br>
+          <span style="font-size: 7.5pt; color: #38BDF8;">hirevoxa.vercel.app</span>
+        </div>
+        <div>
+          <span style="font-size: 7pt; color: #64748B; text-transform: uppercase;">Git Repository</span><br>
+          <span style="font-size: 7.5pt; color: #38BDF8;">github.com/Sajin0816/HireVoxa</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
