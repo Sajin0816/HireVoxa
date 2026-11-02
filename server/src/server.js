@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { connectDB, disconnectDB, getDbMode, getDbName, getDbState, sanitizeError, getMongoUri } from './config/db.js';
+import { isJwtConfigured } from './config/jwt.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,11 +107,12 @@ app.get('/api/health', async (req, res) => {
   const dbState = getDbState();
   const isConnected = dbState === 'connected';
   const hasUri = Boolean(getMongoUri());
-
-  const statusCode = isConnected ? 200 : 503;
+  const jwtReady = isJwtConfigured() || process.env.NODE_ENV !== 'production';
+  const isHealthy = isConnected && jwtReady;
+  const statusCode = isHealthy ? 200 : 503;
 
   res.status(statusCode).json({
-    status: isConnected ? 'ok' : 'degraded',
+    status: isHealthy ? 'ok' : 'degraded',
     service: 'Hirevoxa API Service',
     version: '1.0.0',
     mode: getDbMode(),
@@ -120,7 +122,8 @@ app.get('/api/health', async (req, res) => {
     diagnostics: {
       variablePresent: hasUri,
       variableLength: hasUri ? process.env.MONGODB_URI.trim().length : 0,
-      jwtConfigured: Boolean(process.env.JWT_SECRET && process.env.JWT_SECRET.trim() !== '' && process.env.JWT_SECRET !== 'hirevoxa_jwt_secret_dev_2026'),
+      jwtConfigured: isJwtConfigured(),
+      jwtLength: isJwtConfigured() ? process.env.JWT_SECRET.trim().length : 0,
       runtime: process.env.VERCEL_ENV || 'local',
       nodeEnvironment: process.env.NODE_ENV || 'development'
     },

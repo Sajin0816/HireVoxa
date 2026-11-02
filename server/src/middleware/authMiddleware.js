@@ -2,20 +2,9 @@ import jwt from 'jsonwebtoken';
 import { inMemoryStore } from '../services/inMemoryStore.js';
 import { getDbMode } from '../config/db.js';
 
-let jwtWarned = false;
-export const getJwtSecret = () => {
-  if (process.env.JWT_SECRET && process.env.JWT_SECRET.trim() !== '' && process.env.JWT_SECRET !== 'hirevoxa_jwt_secret_dev_2026') {
-    return process.env.JWT_SECRET.trim();
-  }
-  if (process.env.NODE_ENV === 'production') {
-    if (!jwtWarned) {
-      console.warn('[SECURITY NOTICE] Dedicated JWT_SECRET environment variable not detected. Using secured fallback token.');
-      jwtWarned = true;
-    }
-    return process.env.JWT_SECRET || 'hirevoxa_prod_preview_secret_fallback_2026_secured';
-  }
-  return 'hirevoxa_jwt_secret_dev_2026';
-};
+import { getJwtSecret } from '../config/jwt.js';
+
+export { getJwtSecret };
 
 export const protect = async (req, res, next) => {
   let token = null;
