@@ -222,3 +222,31 @@ Tested on local full-stack (`http://localhost:5173`, backend `http://localhost:5
 - **Navigation Unit Tests (`server/tests/navigation_utils.test.js`):** 5/5 subtests passed (duration 5ms).
 - **Client Build (`npm --prefix client run build`):** 1,985 modules compiled cleanly in 7.37s with **0 errors**.
 - **Code Linter (`oxlint`):** Finished with **0 errors**.
+
+
+---
+
+## 11. Final Pre-Production Go-Live Confirmation Run
+
+**Execution Date:** November 3, 2026  
+**Auditor:** Principal Software Architect, Senior QA Engineer, DevSecOps Engineer, and Production Release Manager  
+**Branch:** `verify/final-pre-production-confirmation`  
+**Safety Protocol:** Isolated QA verification on dedicated Atlas database `hirevoxa_qa`. Production database `hirevoxa` remained strictly isolated with zero local writes. All synthetic records used strict `qa+` tagging and job requisition was closed to `Draft`.
+
+### A. Test Execution & Evidence Log
+
+| Verification Domain | Test Scenario | Verified Record / Details | Result | Evidence File |
+| :--- | :--- | :--- | :---: | :--- |
+| **1. Backend Automated Suite** | 22 Test Suites | 204 of 204 unit and integration tests passed cleanly | **PASS** | Automated test suite execution log |
+| **2. Production Health Audit** | Read-only check | `database: "hirevoxa"`, `jwtConfigured: true`, `mode: "mongodb"`, `nodeEnvironment: "production"` | **PASS** | Production health audit log |
+| **3. Client Build & Lint** | Static analysis & bundle | Client build succeeded in 21.93s (`dist/index.html`, zero build errors); linter 0 errors | **PASS** | Client build stdout |
+| **4. Employer Onboarding** | Registration & session persistence | Sarah Connor (`qa+employer-confirm-1793750000@example.com`, company: `Connor Cybernetic LatAm Labs`, `_id: 6ae9e26a758366a959567547`). Logout confirmation modal verified; re-login verified; hard page reload retained session. | **PASS** | QA database users collection |
+| **5. Talent Directory** | LatAm talent browsing | Navigated `/app/talents`. Rendered 2 available engineers (Rodrigo QA Synthetic & Gabriel Santos) with complete tech stack, country, and experience badges. | **PASS** | `confirm_01_employer_talent_directory.png` |
+| **6. Requisition Creation & Matching** | Job posting & deterministic score | Posted `[QA TEST] Lead Cloud Native Engineer - LatAm` (`_id: 6ae9e384758366a959567597`). `/app/recommended` computed calibrated match score 9.0/10 based on technical skill overlap (Go, Kubernetes, PostgreSQL, AWS, Distributed Systems). | **PASS** | `confirm_02_employer_recommendations_matching.png` |
+| **7. Candidate Onboarding & Profile** | Registration & 100% profile completeness | Thiago Silva (`qa+candidate-confirm-1793750000@example.com`, `_id: 6ae9ee96758366a9595675d0`). Logout/login verified; hard reload verified; completed profile to 100% (title, headline, summary, skills, experience, timezone). | **PASS** | `confirm_03_candidate_profile_100pct.png` |
+| **8. Candidate Job Application** | Search & application submission | Located `[QA TEST] Lead Cloud Native Engineer - LatAm` in `/candidate/jobs`. Submitted application with cover note. Tracked in `/candidate/applications` (`_id: 6ae9f020758366a959567622`). | **PASS** | `confirm_04_candidate_application_tracker.png` |
+| **9. Hiring Pipeline & Interview** | Shortlisting & interview scheduling | Employer reviewed Thiago Silva's application in `/app/applications`. Advanced status to Shortlisted, then scheduled System Architecture technical interview (`_id: 6ae9f020758366a959567622` status updated to `Interview`). | **PASS** | `confirm_05_employer_application_interview_scheduled.png` |
+| **10. Direct Messaging** | Bidirectional real-time messaging | Employer initiated conversation (`_id: 6ae9f16b758366a959567690`). Candidate logged in, viewed incoming message in `/candidate/messages`, and replied back (`_id: 6ae9f1ca758366a9595676c3`). Full thread persisted. | **PASS** | `confirm_06_bidirectional_messaging.png` |
+| **11. Requisition Closure** | Cleanup rule enforcement | Employer updated `[QA TEST] Lead Cloud Native Engineer - LatAm` from `Open` to `Draft`. Requisition unpublished from public view; confirmed in database. | **PASS** | Atlas `jobs` collection record |
+| **12. Responsive Design** | Viewport verification across breakpoints | Mobile (375x667): single "Go to Dashboard" CTA rendered cleanly. Tablet (768x1024): responsive grid and navigation. Desktop (1280x800): full workspace view. | **PASS** | `confirm_07_mobile_viewport_375.png`, `confirm_08_tablet_viewport_768.png` |
+| **13. Non-Verified Workflows** | Admin panel, Live Stripe, Live Email | Explicitly declared BLOCKED / NOT VERIFIED due to credential requirements. | **BLOCKED** | Documented release notes |
