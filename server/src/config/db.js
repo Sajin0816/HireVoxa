@@ -18,6 +18,48 @@ let connectionPromise = null;
 mongoose.set('bufferCommands', false);
 
 /**
+ * Determines whether the current process is running inside a Preview deployment.
+ * Detects Vercel platform environment (VERCEL_ENV === 'preview') or explicit APP_ENV === 'preview'.
+ */
+export function isPreviewDeployment() {
+  return process.env.VERCEL_ENV === 'preview' || process.env.APP_ENV === 'preview';
+}
+
+/**
+ * Resolves the target database name with strict fail-closed isolation rules.
+ *
+ * Rules:
+ * 1. In Preview environments (VERCEL_ENV === 'preview'):
+ *    - An explicit MONGODB_DB_NAME is strictly REQUIRED.
+ *    - Falling back to 'hirevoxa' is strictly prohibited.
+ *    - Explicitly setting MONGODB_DB_NAME='hirevoxa' is rejected with an isolation error.
+ *    - MONGODB_DB_NAME must strictly equal 'hirevoxa_qa'.
+ * 2. In Production (VERCEL_ENV === 'production' or NODE_ENV === 'production'):
+ *    - Uses configured MONGODB_DB_NAME or canonical default 'hirevoxa'.
+ * 3. In Local/Development:
+ *    - Uses configured MONGODB_DB_NAME or default 'hirevoxa'.
+ */
+export function resolveDbName() {
+  const isPreview = isPreviewDeployment();
+  const rawDbName = typeof process.env.MONGODB_DB_NAME === 'string' ? process.env.MONGODB_DB_NAME.trim() : '';
+
+  if (isPreview) {
+    if (!rawDbName) {
+      throw new Error('[Hirevoxa DB Isolation Error] Missing MONGODB_DB_NAME in Preview environment. Preview deployments require an explicitly configured database name (must be \'hirevoxa_qa\'). Silently falling back to the production database is strictly prohibited.');
+    }
+    if (rawDbName === 'hirevoxa') {
+      throw new Error('[Hirevoxa DB Isolation Error] Resolved database in Preview environment is \'hirevoxa\'. Connecting a Preview deployment to the production database is strictly prohibited. Configure MONGODB_DB_NAME=hirevoxa_qa in your Vercel Preview environment variables.');
+    }
+    if (rawDbName !== 'hirevoxa_qa') {
+      throw new Error(`[Hirevoxa DB Isolation Error] Invalid MONGODB_DB_NAME '${rawDbName}' in Preview environment. Preview deployments are strictly restricted to 'hirevoxa_qa'.`);
+    }
+    return 'hirevoxa_qa';
+  }
+
+  return rawDbName || 'hirevoxa';
+}
+
+/**
  * Resolves the MongoDB connection URI from environment variables without exposing credentials or hardcoded fallbacks.
  */
 export function getMongoUri() {
@@ -39,10 +81,10 @@ export function sanitizeError(error) {
 
 /**
  * Evaluates whether demonstration/in-memory mode is allowed.
- * Strictly prohibited in production or when REQUIRE_DB is set.
+ * Strictly prohibited in production, preview, or when REQUIRE_DB is set.
  */
 export function isDemoModeAllowed() {
-  if (process.env.NODE_ENV === 'production' || process.env.REQUIRE_DB === 'true') {
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'preview' || process.env.REQUIRE_DB === 'true') {
     return false;
   }
   return process.env.NODE_ENV === 'test' || process.env.ALLOW_IN_MEMORY_DEMO === 'true';
@@ -65,22 +107,30 @@ export async function connectDB(overrideUri = null) {
     return connectionPromise;
   }
 
-  // Preserve isolated test fixture behavior when running automated test runner unless explicitly testing against live DB
-  if (process.env.NODE_ENV === 'test' && !overrideUri && process.env.TEST_WITH_LIVE_DB !== 'true') {
+  const isPreview = isPreviewDeployment();
+
+  // Preserve isolated test fixture behavior when running automated test runner unless explicitly testing against live DB or preview isolation
+  if (process.env.NODE_ENV === 'test' && !overrideUri && process.env.TEST_WITH_LIVE_DB !== 'true' && !isPreview) {
     activeDbMode = 'in-memory-demo';
     return;
   }
 
   // In non-production demo mode where in-memory was already explicitly initialized
-  if (activeDbMode === 'in-memory-demo' && !overrideUri && !process.env.MONGODB_URI) {
+  if (activeDbMode === 'in-memory-demo' && !overrideUri && !process.env.MONGODB_URI && !isPreview) {
     return;
   }
+
+  // Enforce fail-closed database name resolution upfront
+  const targetDbName = resolveDbName();
 
   const uri = overrideUri !== null ? overrideUri : getMongoUri();
 
   if (!uri || uri.trim() === '') {
+    activeDbMode = 'unavailable';
+    if (isPreview) {
+      throw new Error('[Hirevoxa DB Config Error] Missing MONGODB_URI. Preview environments require an explicitly configured MONGODB_URI environment variable.');
+    }
     if (!isDemoModeAllowed()) {
-      activeDbMode = 'unavailable';
       throw new Error('[Hirevoxa DB Config Error] Missing MONGODB_URI. Production environments require an explicitly configured MONGODB_URI environment variable.');
     }
     activeDbMode = 'in-memory-demo';
@@ -103,8 +153,16 @@ export async function connectDB(overrideUri = null) {
           minPoolSize: 0,
           retryWrites: true,
           w: 'majority',
-          dbName: process.env.MONGODB_DB_NAME || 'hirevoxa'
+          dbName: targetDbName
         });
+
+        // Fail-closed verification after connection: ensure Preview never connects to production
+        if (isPreview && conn.connection.name !== 'hirevoxa_qa') {
+          await mongoose.disconnect();
+          activeDbMode = 'unavailable';
+          throw new Error(`[Hirevoxa DB Isolation Error] Connected database name '${conn.connection.name}' does not match required QA database 'hirevoxa_qa'. Connection terminated.`);
+        }
+
         activeDbMode = 'mongodb';
         console.log(`[Hirevoxa DB] Connected to MongoDB cluster host: ${conn.connection.host} (Database: ${conn.connection.name})`);
         return conn;
@@ -116,7 +174,7 @@ export async function connectDB(overrideUri = null) {
         }
 
         const safeMsg = sanitizeError(error);
-        if (!isDemoModeAllowed()) {
+        if (!isDemoModeAllowed() || isPreview) {
           activeDbMode = 'unavailable';
           throw new Error(`[Hirevoxa DB Connection Error] Unable to connect to MongoDB: ${safeMsg}`);
         }
@@ -166,7 +224,7 @@ export function getDbMode() {
  */
 export function getDbState() {
   const hasUri = Boolean(getMongoUri());
-  if (!hasUri && !isDemoModeAllowed()) {
+  if (!hasUri && (!isDemoModeAllowed() || isPreviewDeployment())) {
     return 'configuration_missing';
   }
   if (!mongoose.connection) {

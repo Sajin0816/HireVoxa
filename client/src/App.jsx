@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { getApiConfigurationError } from './services/api';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -41,6 +42,32 @@ import AdminBillingPage from './pages/admin/AdminBillingPage';
 import PricingPage from './pages/PricingPage';
 
 export default function App() {
+  const configError = getApiConfigurationError();
+
+  if (configError) {
+    return (
+      <div className="min-h-screen bg-[#0F172A] text-white flex items-center justify-center p-6" role="alert">
+        <div className="max-w-xl w-full bg-[#1E293B] border border-red-500/40 rounded-xl p-6 shadow-2xl">
+          <div className="flex items-center gap-3 text-red-400 mb-4">
+            <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <h1 className="text-lg font-semibold">Preview Configuration Required</h1>
+          </div>
+          <p className="text-sm text-slate-300 mb-4 leading-relaxed font-mono bg-black/40 p-3 rounded-lg border border-red-500/20">
+            {configError}
+          </p>
+          <div className="text-xs text-slate-400 space-y-1">
+            <p className="font-medium text-slate-300">Action Required in Vercel Dashboard:</p>
+            <p>1. Open frontend project settings &gt; Environment Variables</p>
+            <p>2. Add <span className="text-white font-mono">VITE_API_BASE_URL</span> set to your Preview backend HTTPS URL</p>
+            <p>3. Select scope: <span className="text-amber-400 font-semibold">Preview</span> only</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AuthProvider>
       <BrowserRouter>

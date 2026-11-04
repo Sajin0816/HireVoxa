@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { connectDB, disconnectDB, getDbMode, getDbName, getDbState, sanitizeError, getMongoUri } from './config/db.js';
+import { connectDB, disconnectDB, getDbMode, getDbName, getDbState, sanitizeError, getMongoUri, isPreviewDeployment, resolveDbName } from './config/db.js';
 import { isJwtConfigured } from './config/jwt.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -125,7 +125,9 @@ app.get('/api/health', async (req, res) => {
       jwtConfigured: isJwtConfigured(),
       jwtLength: isJwtConfigured() ? process.env.JWT_SECRET.trim().length : 0,
       runtime: process.env.VERCEL_ENV || 'local',
-      nodeEnvironment: process.env.NODE_ENV || 'development'
+      nodeEnvironment: process.env.NODE_ENV || 'development',
+      dbNameConfigured: Boolean(process.env.MONGODB_DB_NAME),
+      dbIsolationEnforced: isPreviewDeployment()
     },
     uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString()

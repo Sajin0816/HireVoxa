@@ -1,113 +1,148 @@
-# HIREVOXA — PREVIEW DEPLOYMENT AUDIT & PRE-PRODUCTION GO-LIVE GAP REPORT
+# HIREVOXA — PREVIEW ISOLATION HARDENING & PRE-DEPLOYMENT READINESS REPORT
 
-**Audit Date:** November 3, 2026  
-**Project Repository:** `G:\HireVoxa`  
+**Date:** November 4, 2026  
+**Repository:** `G:\HireVoxa`  
 **GitHub Remote:** `https://github.com/Sajin0816/HireVoxa`  
-**Verification Branch:** `verify/final-pre-production-confirmation` (Commit `91bba46`, clean tree)  
-**Production Frontend:** `https://hirevoxa.vercel.app`  
-**Production Backend:** `https://hirevoxa-server.vercel.app`  
-**Production Database:** MongoDB Atlas — `hirevoxa` (Strictly shielded; read-only health checks only)  
-**Dedicated QA Database:** MongoDB Atlas — `hirevoxa_qa` (Full interactive lifecycle verification passed locally)  
-**Evidence Archive:** `G:\HireVoxa_evidence\`  
-**Backup Archive:** `G:\HireVoxa_backup\`  
-**Lead Auditor:** Principal Software Architect, Senior QA Engineer, DevSecOps Engineer, and Production Release Manager
+**Current Working Branch:** `verify/final-pre-production-confirmation`  
+**Role:** Principal DevOps Engineer, Backend Security Architect, and Senior Full-Stack Engineer  
+**Status:** Local Hardening Completed — Ready for Branch Push & Vercel Preview Configuration
 
 ---
 
 ## 1. EXECUTIVE SUMMARY & VERDICT
 
-An exhaustive audit of the Vercel Preview hosting tier was conducted to verify whether an isolated, deployed Preview frontend and Preview backend exist for the verification branch before granting production release approval.
+To eliminate any risk of cross-contamination between Vercel Preview environments and the Production database, fail-closed protection has been implemented across both the frontend and backend architectures.
 
-### Findings
-1. **No Preview Deployment for Verification Branch:** The verification branch `verify/final-pre-production-confirmation` (Commit `91bba46`) is a local branch that was never pushed to the remote GitHub repository (`origin`). Consequently, Vercel has not created a Preview deployment for this branch.
-2. **Vercel Deployment Protection (SSO Barrier):** Probing existing remote branch preview URLs (`https://hirevoxa-git-fix-final-production-ready-himmatchouhan50-6334.vercel.app` and `https://hirevoxa-server-git-hirevoxa-vercel-test-himmatchouhan50-6334.vercel.app/api/health`) revealed that all Preview URLs under account `himmatchouhan50-6334` are strictly locked by **Vercel Deployment Protection / SSO**. Navigating to them returns HTTP 200 with HTML title `Login – Vercel` and redirects to `https://vercel.com/login?next=...`. Automated browsers cannot bypass this without Vercel team authentication cookies.
-3. **Missing Preview Backend Deployment:** Probing `https://hirevoxa-server-git-fix-final-production-ready-himmatchouhan50-6334.vercel.app/api/health` returned `fetch failed` (DNS unresolvable / ENOTFOUND). No backend preview deployment exists for commit `6398986`.
-4. **Preview Isolation Failure Risk:** In `client/src/services/api.js` (lines 8-10), any frontend running on `*.vercel.app` defaults to `https://hirevoxa-server.vercel.app/api` (the **Production backend**) unless `VITE_API_BASE_URL` was explicitly injected during the build. Furthermore, in `server/src/config/db.js`, `dbName` defaults to `process.env.MONGODB_DB_NAME || 'hirevoxa'` (**Production database**). Without verified Preview-scoped environment variables in Vercel (`VITE_API_BASE_URL` on the frontend and `MONGODB_DB_NAME=hirevoxa_qa` on the backend), testing any deployed Preview would route write traffic directly to the production database `hirevoxa`.
-5. **Local Quality & Codebase Readiness:** All 204 backend tests passed cleanly. Client build compiled with 0 errors. The full hiring lifecycle (employer onboarding, job posting, deterministic matching, candidate profile completeness, application review, interview scheduling, two-way messaging, requisition unpublishing to Draft, and multi-viewport layouts) passed on local `hirevoxa_qa`.
+The codebase now enforces deterministic, fail-closed isolation:
+1. **Frontend:** In any Vercel Preview deployment (`*.vercel.app` excluding canonical `hirevoxa.vercel.app`), the client requires an explicit, HTTPS-secured `VITE_API_BASE_URL` pointing to an isolated Preview backend. Falling back to the Production backend or localhost is strictly blocked. If the variable is missing or invalid, an accessible diagnostic overlay is rendered and all API requests are rejected upfront.
+2. **Backend:** In any Vercel Preview deployment (`VERCEL_ENV === 'preview'`), the backend strictly requires `MONGODB_DB_NAME=hirevoxa_qa`. Falling back to the Production database `hirevoxa` is strictly prohibited and rejected at startup. Connection to `hirevoxa` is rejected with an isolation error, and in-memory demo mode is disabled in Preview.
+3. **Production Preservation:** The production application running on `hirevoxa.vercel.app` and `hirevoxa-server.vercel.app` continues using its existing, verified configuration without modification. Local development continues to work without disruption.
+4. **Verification Gate:** 222 automated tests (including 18 new isolation tests) passed across 24 suites. Client build compiled cleanly in 8.68s with 0 errors.
 
 ```text
 ========================================================================================
-FINAL AUDIT VERDICT:
-NOT DEPLOYED — GO-LIVE GATE FAILED
+CURRENT ARCHITECTURAL STATUS:
+FAIL-CLOSED PREVIEW ISOLATION IMPLEMENTED & TESTED (LOCAL)
+PREVIEW ENVIRONMENT VARIABLES PENDING IN VERCEL DASHBOARD
 ========================================================================================
 ```
 
 ---
 
-## 2. PREVIEW DEPLOYMENT IDENTIFICATION (STEP 1)
+## 2. EXACT FILES CHANGED & TECHNICAL RATIONALE
 
-| Verification Item | Finding | Details / Evidence |
-| :--- | :---: | :--- |
-| **Verification Branch Deployed to Preview?** | **NO** | `verify/final-pre-production-confirmation` exists only locally. `git branch -r` confirms it was not pushed to `origin`. |
-| **Frontend Preview URL** | **BLOCKED** | `https://hirevoxa-git-fix-final-production-ready-himmatchouhan50-6334.vercel.app` redirects to `https://vercel.com/login?next=...` (Vercel Deployment Protection). Captured in `preview_gap_01_vercel_sso_protection.png`. |
-| **Backend Preview URL** | **NOT FOUND** | `https://hirevoxa-server-git-fix-final-production-ready-himmatchouhan50-6334.vercel.app/api/health` does not exist (`ENOTFOUND`). |
-| **Old Backend Preview URL (`hirevoxa-vercel-test`)** | **BLOCKED** | `https://hirevoxa-server-git-hirevoxa-vercel-test-himmatchouhan50-6334.vercel.app/api/health` redirects to `Login – Vercel` (HTML, not JSON). |
-| **Deployments Completed Successfully?** | **NO** | No operational, accessible Preview frontend & backend pair exists. |
-| **Commit in Current Production** | **`6398986`** | `https://hirevoxa-server.vercel.app/api/health` is live on production `hirevoxa`. |
-| **Commit in Local Verification Branch** | **`91bba46`** | Contains complete documentation, bidirectional messaging, and test suite verification. |
-
----
-
-## 3. PREVIEW ENVIRONMENT ISOLATION AUDIT (STEP 2)
-
-| Isolation Boundary | Configured Implementation | Isolation Status |
-| :--- | :--- | :---: |
-| **Frontend API Target** | `client/src/services/api.js`: falls back to `https://hirevoxa-server.vercel.app/api` on `*.vercel.app` | **NOT ISOLATED** (Defaults to Production Backend) |
-| **Backend Database Name** | `server/src/config/db.js`: `process.env.MONGODB_DB_NAME || 'hirevoxa'` | **NOT ISOLATED** (Defaults to Production Database) |
-| **Preview-Scoped Env Variables** | Vercel CLI unauthenticated locally (`> Logged out`). Unable to inspect Vercel dashboard scopes. | **CANNOT PROVE ISOLATION** |
-| **Production Database Protection** | Production backend is active on Atlas `hirevoxa`. Any Preview write falling back to production backend writes directly to `hirevoxa`. | **BLOCKED PER SAFETY DIRECTIVE** |
-
-> **MANDATORY SAFETY HALT (Step 2 Directive):**  
-> *"If isolation cannot be proven, STOP. Do not change Production environment variables or replace the Production MongoDB URI."*  
-> Because isolation of a Vercel Preview environment from the production database `hirevoxa` cannot be guaranteed without dashboard environment variable access, automated write testing against deployed Preview URLs was immediately halted.
+| File Path | Nature of Change | Architectural Purpose |
+| :--- | :--- | :--- |
+| **`client/src/services/apiConfig.js`** | New Module | Pure isolation guard. Implements `isVercelPreviewHostname`, `isFrontendPreview`, `validatePreviewApiUrl`, and `resolveApiBaseUrl`. Detects Preview domains, validates HTTPS protocol, blocks pointing Preview to Production, and throws fail-closed errors. |
+| **`client/src/services/api.js`** | Modified | Integrates `resolveApiBaseUrl`. Tracks `apiConfigError` at module initialization and rejects all API dispatches (`request`, `downloadResume`, `exportAdminReportCsv`, `exportBillingCsv`) if configuration is invalid. |
+| **`client/src/App.jsx`** | Modified | Renders an accessible diagnostic screen if `getApiConfigurationError()` is non-null, guiding the operator on exact Vercel dashboard environment variable requirements. |
+| **`client/vite.config.js`** | Modified | Injects `import.meta.env.VITE_VERCEL_ENV` from `process.env.VERCEL_ENV` at build time so Vite bundles have compile-time visibility into the Vercel deployment tier. |
+| **`server/src/config/db.js`** | Modified | Implements `isPreviewDeployment()`, `resolveDbName()`, and `isDemoModeAllowed()`. In Preview, enforces `MONGODB_DB_NAME=hirevoxa_qa`, rejects missing DB names, rejects `hirevoxa`, rejects demo mode, and verifies connected DB post-connection. |
+| **`server/src/server.js`** | Modified | Imports isolation helpers and enriches `/api/health` diagnostics with `dbNameConfigured` and `dbIsolationEnforced`. |
+| **`server/package.json`** | Modified | Registers new test suites `tests/preview_isolation.test.js` and `tests/frontend_api_config.test.js` in `npm test` script. |
+| **`server/tests/preview_isolation.test.js`** | New Test Suite (10 tests) | Proves backend Preview isolation: `hirevoxa_qa` resolution, missing DB rejection, `hirevoxa` rejection, missing URI rejection, demo mode prevention, production preservation, and local development compatibility. |
+| **`server/tests/frontend_api_config.test.js`** | New Test Suite (8 tests) | Proves frontend Preview isolation: domain detection, missing variable fail-closed error, HTTP rejection, Production backend URL rejection, HTTPS normalization, production preservation, and local development compatibility. |
+| **`docs/QA_PROGRESS.md`** | Modified | Appended Section 12 documenting the complete implementation, test results, and verification log. |
 
 ---
 
-## 4. PREVIEW GAP EVIDENCE ARTIFACTS (`G:\HireVoxa_evidence\`)
+## 3. AUTOMATED TEST SUITE EXECUTION RESULTS
 
-1. `preview_gap_01_vercel_sso_protection.png` — Live Chrome DevTools capture of `https://hirevoxa-git-fix-final-production-ready-himmatchouhan50-6334.vercel.app` redirecting to Vercel SSO login page (`Login – Vercel`, `url="https://vercel.com/login?next=..."`).
-2. `confirm_01_employer_talent_directory.png` — Verified talent directory on isolated `hirevoxa_qa`.
-3. `confirm_02_employer_recommendations_matching.png` — Deterministic matching score (9.0/10) on isolated `hirevoxa_qa`.
-4. `confirm_03_candidate_profile_100pct.png` — Candidate 100% profile completeness on isolated `hirevoxa_qa`.
-5. `confirm_04_candidate_application_tracker.png` — Candidate application tracking portal on isolated `hirevoxa_qa`.
-6. `confirm_05_employer_application_interview_scheduled.png` — Application inbox review and interview scheduling on isolated `hirevoxa_qa`.
-7. `confirm_06_bidirectional_messaging.png` — Bidirectional messaging thread on isolated `hirevoxa_qa`.
-8. `confirm_07_mobile_viewport_375.png` — Mobile viewport (375x667) navigation on isolated environment.
-9. `confirm_08_tablet_viewport_768.png` — Tablet viewport (768x1024) showing closed Draft requisition.
-
----
-
-## 5. RESOLUTION REQUIREMENTS TO ACHIEVE PREVIEW GO-LIVE
-
-To enable live Preview deployment verification without endangering the production database, the following actions must be taken in the Vercel dashboard:
-
-1. **Push Verification Branch to GitHub:**
-   - Push `verify/final-pre-production-confirmation` (or merge to a designated preview branch) so Vercel can trigger preview builds.
-2. **Configure Preview Environment Variables in Vercel:**
-   - In `hirevoxa-server` (Backend Project) -> Settings -> Environment Variables:
-     - Add `MONGODB_DB_NAME` = `hirevoxa_qa` (Scope: **Preview only**).
-     - Ensure `MONGODB_URI` and `JWT_SECRET` are available for Preview.
-   - In `hirevoxa` (Frontend Project) -> Settings -> Environment Variables:
-     - Add `VITE_API_BASE_URL` = `https://<backend-preview-url>/api` (Scope: **Preview only**).
-3. **Adjust Deployment Protection for Preview Testing:**
-   - In Vercel Project Settings -> Deployment Protection:
-     - Temporarily disable Vercel Authentication for Preview deployments, or provide a shareable bypass protection secret/token so automated QA browsers can access the preview frontend and backend.
-
----
-
-## 6. FINAL RELEASE GATE & VERDICT
-
+### Backend Test Runner (`npm --prefix server test`)
 ```text
-========================================================================================
-FINAL AUDIT VERDICT:
-NOT DEPLOYED — GO-LIVE GATE FAILED
-========================================================================================
+TAP version 13
+# tests 222
+# suites 24
+# pass 222
+# fail 0
+# cancelled 0
+# skipped 0
+# duration_ms 54840
 ```
+- **Backend Preview Isolation Tests (`tests/preview_isolation.test.js`):** 10/10 PASS
+- **Frontend API Config Tests (`tests/frontend_api_config.test.js`):** 8/8 PASS
+- **Navigation & RBAC Tests (`tests/navigation_utils.test.js`):** 5/5 PASS
+- **JWT Configuration Tests (`tests/jwt_config.test.js`):** 7/7 PASS
+- **API & Core Routes Tests (`tests/api.test.js`):** 9/9 PASS
+- **Authentication Tests (`tests/auth.test.js`):** 11/11 PASS
+- **Session Security Tests (`tests/session_security.test.js`):** 9/9 PASS
+- **Tenant Isolation Tests (`tests/tenant_isolation.test.js`):** 18/18 PASS
+- **All other acceptance & lifecycle suites:** 145/145 PASS
 
-In strict compliance with instructions:
-- **NO DEPLOYMENT TO PRODUCTION HAS BEEN PERFORMED.**
-- **NO BRANCH HAS BEEN MERGED INTO `main`.**
-- **NO PRODUCTION ENVIRONMENT VARIABLES HAVE BEEN ALTERED.**
-- **NO DESTRUCTIVE DATABASE OPERATIONS WERE PERFORMED.**
+### Frontend Quality & Build
+- **Code Linter (`npm --prefix client run lint`):** 0 errors (112 non-blocking warnings).
+- **Production Build (`npm --prefix client run build`):** Compiled 1,986 modules cleanly in 8.68s (`dist/index.html`, `dist/assets/index-lbQrKee3.css`, `dist/assets/index-BVVRX1Gb.js`). Zero build errors.
 
-Awaiting user instructions.
+---
+
+## 4. PREVIEW FAIL-CLOSED BEHAVIOR SPECIFICATION
+
+### Frontend Behavior in Preview
+1. **Domain Detection:** Any URL ending in `.vercel.app` (except `hirevoxa.vercel.app`) or any build with `VITE_VERCEL_ENV=preview` is treated as a Preview environment.
+2. **Missing `VITE_API_BASE_URL`:**
+   - Immediately throws: `[Hirevoxa Config Error] Preview deployment missing required VITE_API_BASE_URL. In Preview environments, an explicit HTTPS backend URL is required to prevent accidental calls to the Production API.`
+   - Does NOT default to Production backend (`https://hirevoxa-server.vercel.app/api`).
+   - Does NOT default to `localhost`.
+   - UI renders a clear diagnostic overlay with setup instructions.
+   - All `api.*` methods reject upfront before initiating any fetch request.
+3. **Invalid Protocol (HTTP):**
+   - Immediately throws: `[Hirevoxa Config Error] Invalid VITE_API_BASE_URL 'http://...'. Preview API URL must use secure HTTPS protocol.`
+4. **Pointing to Production Backend:**
+   - If `VITE_API_BASE_URL` contains `hirevoxa-server.vercel.app`, it is immediately rejected: `[Hirevoxa Config Error] Preview VITE_API_BASE_URL cannot point to the Production backend (https://hirevoxa-server.vercel.app). Preview environments must point to an isolated Preview backend.`
+
+### Backend Behavior in Preview
+1. **Environment Detection:** Any deployment where `VERCEL_ENV === 'preview'` or `APP_ENV === 'preview'`.
+2. **Missing `MONGODB_DB_NAME`:**
+   - Throws: `[Hirevoxa DB Isolation Error] Missing MONGODB_DB_NAME in Preview environment. Preview deployments require an explicitly configured database name (must be 'hirevoxa_qa'). Silently falling back to the production database is strictly prohibited.`
+   - Serverless invocations fail closed; no connection is attempted.
+3. **Production Database Rejection:**
+   - If `MONGODB_DB_NAME === 'hirevoxa'`, throws: `[Hirevoxa DB Isolation Error] Resolved database in Preview environment is 'hirevoxa'. Connecting a Preview deployment to the production database is strictly prohibited.`
+4. **Unauthorized Database Rejection:**
+   - If `MONGODB_DB_NAME !== 'hirevoxa_qa'`, throws: `[Hirevoxa DB Isolation Error] Invalid MONGODB_DB_NAME '...' in Preview environment. Preview deployments are strictly restricted to 'hirevoxa_qa'.`
+5. **Post-Connection Assertion:**
+   - After Mongoose establishes a connection, verifies `conn.connection.name === 'hirevoxa_qa'`. If mismatched, immediately disconnects and terminates the process.
+
+---
+
+## 5. REQUIRED VERCEL DASHBOARD CONFIGURATION (MANUAL STEP)
+
+Before pushing the verification branch to trigger Preview deployments, the following configuration must be set in the Vercel dashboard:
+
+### Project 1: Backend (`hirevoxa-server`)
+Go to: **Vercel Dashboard > `hirevoxa-server` > Settings > Environment Variables**
+
+| Variable Name | Value | Target Environment Scope | Purpose |
+| :--- | :--- | :---: | :--- |
+| `MONGODB_DB_NAME` | `hirevoxa_qa` | **Preview ONLY** (Uncheck Production & Development) | Enforces isolated QA database for Preview |
+| `MONGODB_URI` | *(Your existing Atlas connection string)* | **Preview** (Ensure checked) | Atlas cluster connectivity |
+| `JWT_SECRET` | *(Your existing secret string)* | **Preview** (Ensure checked) | Secure session tokens |
+
+### Project 2: Frontend (`hirevoxa`)
+Go to: **Vercel Dashboard > `hirevoxa` > Settings > Environment Variables**
+
+| Variable Name | Value | Target Environment Scope | Purpose |
+| :--- | :--- | :---: | :--- |
+| `VITE_API_BASE_URL` | `https://hirevoxa-server-git-<branch>-himmatchouhan50-6334.vercel.app/api` | **Preview ONLY** | Points Preview frontend to Preview backend |
+
+### Deployment Protection Note
+In **Vercel Dashboard > Project Settings > Deployment Protection**:
+- Preview URLs currently redirect to `Login – Vercel`. For automated end-to-end testing, temporarily disable Vercel Authentication for Preview deployments, or provide a protection bypass token (`x-vercel-protection-bypass`).
+
+---
+
+## 6. GIT STATE & NEXT STEPS
+
+- **Current Git Branch:** `verify/final-pre-production-confirmation`
+- **Current Commit:** `3126edd` (`feat(security): implement fail-closed preview isolation for database and api`)
+- **Remote Push Status:** Not pushed to `origin` (held locally).
+- **Production Status:** Untouched, operational, healthy.
+
+### Absolute Stop Condition
+In accordance with instructions:
+- **NO BRANCH HAS BEEN PUSHED TO GITHUB.**
+- **NO CODE HAS BEEN MERGED TO `main`.**
+- **NO DEPLOYMENT HAS BEEN TRIGGERED.**
+- **NO VERCEL ENVIRONMENT VARIABLES HAVE BEEN MODIFIED.**
+- **NO PRODUCTION DATABASE WRITES WERE EXECUTED.**
+
+Awaiting user review and authorization before proceeding with Git push.

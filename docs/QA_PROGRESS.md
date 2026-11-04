@@ -250,3 +250,69 @@ Tested on local full-stack (`http://localhost:5173`, backend `http://localhost:5
 | **11. Requisition Closure** | Cleanup rule enforcement | Employer updated `[QA TEST] Lead Cloud Native Engineer - LatAm` from `Open` to `Draft`. Requisition unpublished from public view; confirmed in database. | **PASS** | Atlas `jobs` collection record |
 | **12. Responsive Design** | Viewport verification across breakpoints | Mobile (375x667): single "Go to Dashboard" CTA rendered cleanly. Tablet (768x1024): responsive grid and navigation. Desktop (1280x800): full workspace view. | **PASS** | `confirm_07_mobile_viewport_375.png`, `confirm_08_tablet_viewport_768.png` |
 | **13. Non-Verified Workflows** | Admin panel, Live Stripe, Live Email | Explicitly declared BLOCKED / NOT VERIFIED due to credential requirements. | **BLOCKED** | Documented release notes |
+
+
+---
+
+## 12. Preview Isolation Hardening & Fail-Closed Protection
+
+**Implementation Date:** November 4, 2026  
+**Auditor:** Principal DevOps Engineer, Backend Security Architect, and Senior Full-Stack Engineer  
+**Objective:** Eliminate silent fallbacks in Preview deployments:
+1. Prevent frontend Preview deployments from silently calling the Production backend.
+2. Prevent backend Preview deployments from silently defaulting to the Production database `hirevoxa`.
+
+### A. Code Implementation Summary
+
+1. **`client/src/services/apiConfig.js` (New Module):**
+   - `isVercelPreviewHostname(hostname)`: Reliably identifies Preview domains (`*.vercel.app` excluding canonical `hirevoxa.vercel.app`).
+   - `isFrontendPreview(env, hostname)`: Evaluates build-time Vercel environment flags and runtime hostnames.
+   - `validatePreviewApiUrl(url)`: Enforces HTTPS protocol and strictly prohibits pointing Preview frontends to the Production backend (`hirevoxa-server.vercel.app`).
+   - `resolveApiBaseUrl(env, hostname)`: Fail-closed resolution: throws immediately if `VITE_API_BASE_URL` is missing or invalid in Preview. Preserves canonical production and local defaults.
+
+2. **`client/src/services/api.js`:**
+   - Integrated `resolveApiBaseUrl`.
+   - `apiConfigError` state tracked at module init. All `request()`, `downloadResume()`, `exportAdminReportCsv()`, and `exportBillingCsv()` calls immediately reject if configuration is invalid, preventing any network dispatch.
+
+3. **`client/src/App.jsx`:**
+   - Integrated `getApiConfigurationError()`. If Preview configuration is missing or invalid, renders an accessible, fail-closed diagnostic overlay with exact instructions on required Vercel environment variables.
+
+4. **`client/vite.config.js`:**
+   - Injected `import.meta.env.VITE_VERCEL_ENV` from process environment at build time.
+
+5. **`server/src/config/db.js`:**
+   - `isPreviewDeployment()`: Identifies Vercel preview environments (`VERCEL_ENV === 'preview'` or `APP_ENV === 'preview'`).
+   - `resolveDbName()`: In Preview, strictly requires `MONGODB_DB_NAME=hirevoxa_qa`. Rejects missing/empty names, rejects `hirevoxa` (Production), and rejects any other unauthorized database names. In Production, preserves canonical `hirevoxa`.
+   - `isDemoModeAllowed()`: Explicitly blocks in-memory demo mode in Preview.
+   - `connectDB()`: Fails fast if URI or DB name is missing in Preview; verifies connected database post-connection (`conn.connection.name === 'hirevoxa_qa'`) and terminates connection if mismatched.
+
+6. **`server/src/server.js`:**
+   - Enhanced `/api/health` diagnostics to report `dbNameConfigured` and `dbIsolationEnforced`.
+
+### B. Automated Test Suite Verification
+
+1. **`server/tests/preview_isolation.test.js` (10 tests):**
+   - Preview with `MONGODB_DB_NAME=hirevoxa_qa` resolves `hirevoxa_qa`: **PASS**
+   - Preview without `MONGODB_DB_NAME` throws isolation error (no production fallback): **PASS**
+   - Preview with whitespace `MONGODB_DB_NAME` throws isolation error: **PASS**
+   - Preview with `MONGODB_DB_NAME=hirevoxa` throws isolation error: **PASS**
+   - Preview with unauthorized DB name throws isolation error: **PASS**
+   - Preview with missing `MONGODB_URI` fails fast in `connectDB`: **PASS**
+   - `isDemoModeAllowed` returns false in Preview: **PASS**
+   - Production continues using intended configuration (`hirevoxa`): **PASS**
+   - Local development continues using intended configuration: **PASS**
+
+2. **`server/tests/frontend_api_config.test.js` (8 tests):**
+   - `isVercelPreviewHostname` detects preview domains and excludes production: **PASS**
+   - `isFrontendPreview` detects build env and hostname: **PASS**
+   - Preview frontend without `VITE_API_BASE_URL` fails closed (no production or localhost call): **PASS**
+   - Preview frontend with insecure HTTP URL is rejected: **PASS**
+   - Preview frontend pointing to Production backend is strictly blocked: **PASS**
+   - Preview frontend with valid HTTPS Preview API URL succeeds: **PASS**
+   - Production hostnames continue using Production backend: **PASS**
+   - Local development continues using `http://localhost:5000/api`: **PASS**
+
+3. **Overall Test Results:**
+   - Total Backend Tests: **222 of 222 passed across 24 test suites** (0 failures).
+   - Client Linter (`oxlint`): **0 errors**.
+   - Client Production Build (`vite build`): **Built cleanly in 8.68s** (0 errors).

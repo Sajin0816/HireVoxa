@@ -1,23 +1,41 @@
 // Hirevoxa Reusable API Client
 // Connects to Express backend with environment variable configuration, credentials, and anti-CSRF headers
+import { resolveApiBaseUrl, isFrontendPreview, isVercelPreviewHostname } from './apiConfig.js';
 
-const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+let apiConfigError = null;
+let API_BASE_URL = '';
+
+export const initApiConfig = () => {
+  try {
+    const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {};
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    API_BASE_URL = resolveApiBaseUrl(env, hostname);
+    apiConfigError = null;
+  } catch (err) {
+    API_BASE_URL = '';
+    apiConfigError = err.message;
+    console.error('[Hirevoxa API Configuration Error]', err.message);
   }
-  if (typeof window !== 'undefined' && (window.location.hostname === 'hirevoxa.vercel.app' || window.location.hostname.endsWith('.vercel.app'))) {
-    return 'https://hirevoxa-server.vercel.app/api';
-  }
-  return 'http://localhost:5000/api';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+initApiConfig();
+
+export const getApiConfigurationError = () => apiConfigError;
+export const getApiBaseUrl = () => API_BASE_URL;
+export { isFrontendPreview, isVercelPreviewHostname };
 
 function getToken() {
   return localStorage.getItem('hirevoxa_token');
 }
 
 async function request(endpoint, options = {}) {
+  if (apiConfigError) {
+    const configError = new Error(apiConfigError);
+    configError.isConfigurationError = true;
+    configError.status = 500;
+    return Promise.reject(configError);
+  }
+
   const url = `${API_BASE_URL}${endpoint}`;
   const token = getToken();
 
@@ -130,6 +148,9 @@ export const api = {
   },
   deleteMyResume: (id) => request(`/candidates/me/resume/${id}`, { method: 'DELETE' }),
   downloadResume: async (id) => {
+    if (apiConfigError) {
+      throw new Error(apiConfigError);
+    }
     const res = await fetch(`${API_BASE_URL}/candidates/resume/${id}`, {
       credentials: 'include',
       headers: {
@@ -360,6 +381,9 @@ export const api = {
     }),
 
   exportAdminReportCsv: async (type) => {
+    if (apiConfigError) {
+      throw new Error(apiConfigError);
+    }
     const url = `${API_BASE_URL}/admin/reports/export/${type}`;
     const token = getToken();
     const res = await fetch(url, {
@@ -408,6 +432,9 @@ export const api = {
       body: JSON.stringify({ reason })
     }),
   exportBillingCsv: async () => {
+    if (apiConfigError) {
+      throw new Error(apiConfigError);
+    }
     const url = `${API_BASE_URL}/billing/admin/export`;
     const token = getToken();
     const res = await fetch(url, {
