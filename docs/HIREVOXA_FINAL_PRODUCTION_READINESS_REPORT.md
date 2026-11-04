@@ -130,19 +130,33 @@ In **Vercel Dashboard > Project Settings > Deployment Protection**:
 
 ---
 
-## 6. GIT STATE & NEXT STEPS
+## 6. REMOTE SYNCHRONIZATION & PREVIEW DEPLOYMENT EVIDENCE
 
-- **Current Git Branch:** `verify/final-pre-production-confirmation`
-- **Current Commit:** `3126edd` (`feat(security): implement fail-closed preview isolation for database and api`)
-- **Remote Push Status:** Not pushed to `origin` (held locally).
-- **Production Status:** Untouched, operational, healthy.
+- **Current Git Branch:** `verify/final-pre-production-confirmation` (tracked at `origin/verify/final-pre-production-confirmation`)
+- **Deployed Commit:** `95cf9db` (`feat(security): implement fail-closed preview isolation for database and api`)
+- **Remote Push Status:** Pushed and synchronized with GitHub.
+- **Vercel Deployments Generated:**
+  - **Frontend SPA (`hirevoxa`):** Deployment `AkKnNCBrpGonzNNV9Su4S7xdBMg9` (`https://hirevoxa-git-verify-final-pre-produ-4da658-himmatchouhan50-6334.vercel.app`) — State: `success`.
+  - **Backend API (`hirevoxa-server`):** Deployment `CHt3HBtvtx5mTYwFYKNmngLhv4m5` (Inspect: `https://vercel.com/himmatchouhan50-6334/hirevoxa-server/CHt3HBtvtx5mTYwFYKNmngLhv4m5`) — State: `success`.
+- **Production Status:** Untouched, operational, healthy (`https://hirevoxa-server.vercel.app/api/health` reports connected to `hirevoxa`).
+
+---
+
+## 7. REMAINING PREVIEW VERIFICATION & PRODUCTION RELEASE GATE
+
+1. **Backend Preview URL & Environment Validation:**
+   - Confirm backend preview URL from deployment overview (`CHt3HBtvtx5mTYwFYKNmngLhv4m5`).
+   - Query `/api/health` with bypass token or active session to verify `database: "hirevoxa_qa"`, `connectionState: "connected"`, and `dbIsolationEnforced: true`.
+2. **Frontend Preview API Binding:**
+   - Configure `VITE_API_BASE_URL` in Vercel (`hirevoxa` project > Settings > Environment Variables > Preview scope) with the verified backend Preview URL.
+   - Trigger frontend preview redeploy.
+3. **End-to-End Browser QA:**
+   - Verify Employer & Candidate authentication, job lifecycle, applications, interviews, and messaging on the deployed Preview.
+4. **Production Release Gate:**
+   - Fast-forward merge `verify/final-pre-production-confirmation` into `main` only after explicit user authorization (`"GO PRODUCTION"`).
 
 ### Absolute Stop Condition
-In accordance with instructions:
-- **NO BRANCH HAS BEEN PUSHED TO GITHUB.**
-- **NO CODE HAS BEEN MERGED TO `main`.**
-- **NO DEPLOYMENT HAS BEEN TRIGGERED.**
-- **NO VERCEL ENVIRONMENT VARIABLES HAVE BEEN MODIFIED.**
-- **NO PRODUCTION DATABASE WRITES WERE EXECUTED.**
-
-Awaiting user review and authorization before proceeding with Git push.
+- **NO PRODUCTION DEPLOYMENT TRIGGERED.**
+- **NO MERGE INTO MAIN EXECUTED.**
+- **NO PRODUCTION DATABASE WRITES EXECUTED.**
+- **Awaiting User Review and Instructions.**
